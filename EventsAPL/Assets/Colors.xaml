@@ -1,0 +1,24 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ====== ФОНЫ ====== -->
+    <SolidColorBrush x:Key="AppBackground"   Color="#0A1F17"/>
+    <SolidColorBrush x:Key="AppSurface"      Color="#102A20"/>
+    <SolidColorBrush x:Key="AppBorder"       Color="#1F4235"/>
+    <SolidColorBrush x:Key="SidebarBg"       Color="#0D2419"/>
+
+    <!-- ====== ТЕКСТ ====== -->
+    <SolidColorBrush x:Key="TextPrimary"     Color="#E5F5EB"/>
+    <SolidColorBrush x:Key="TextSecondary"   Color="#7FA08D"/>
+    <SolidColorBrush x:Key="TextOnAccent"    Color="#051510"/>
+
+    <!-- ====== АКЦЕНТ (изумруд) ====== -->
+    <SolidColorBrush x:Key="Accent"          Color="#10B981"/>
+    <SolidColorBrush x:Key="AccentHover"     Color="#34D399"/>
+    <SolidColorBrush x:Key="AccentDim"       Color="#0E3A2B"/>
+
+    <!-- ====== СОСТОЯНИЯ ====== -->
+    <SolidColorBrush x:Key="Hover"           Color="#17382A"/>
+    <SolidColorBrush x:Key="Danger"          Color="#F87171"/>
+
+</ResourceDictionary>
