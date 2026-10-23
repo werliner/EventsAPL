@@ -68,6 +68,9 @@
                             <TextBlock Text="{Binding Text}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Foreground="{StaticResource TextSecondary}"/>
                         </Border>
                     </DataTemplate>
+                    <DataTemplate DataType="{x:Type vm:DictionariesViewModel}">
+                        <views:DictionariesView/>
+                    </DataTemplate>
                 </ContentControl.Resources>
             </ContentControl>
 

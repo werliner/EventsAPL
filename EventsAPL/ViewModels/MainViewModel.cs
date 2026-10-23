@@ -11,6 +11,7 @@ namespace EventsAPL.ViewModels;
 public class MainViewModel : ViewModelBase
 {
     private readonly GroupRepository _groupRepository;
+    private readonly DictionaryRepository _dictionaryRepository = null!;
     private readonly StudentRepository _studentRepository;
     private readonly TeacherRepository _teacherRepository; // <-- НОВОЕ
 
@@ -62,7 +63,8 @@ public class MainViewModel : ViewModelBase
             var client = new TursoClient(url, token);
             _groupRepository = new GroupRepository(client);
             _studentRepository = new StudentRepository(client);
-            _teacherRepository = new TeacherRepository(client); // <-- НОВОЕ
+            _teacherRepository = new TeacherRepository(client);
+            _dictionaryRepository = new DictionaryRepository(client);
 
             NavigateCommand = new RelayCommand(param => Navigate(param as string));
             LoginCommand = new RelayCommand(_ => MessageBox.Show("Окно авторизации появится позже"));
@@ -84,7 +86,8 @@ public class MainViewModel : ViewModelBase
         {
             "Groups" => new GroupsViewModel(_groupRepository, NavigateToStudents),
             "Students" => new StudentsViewModel(_studentRepository, _groupRepository),
-            "Teachers" => new TeachersViewModel(_teacherRepository), // <-- НОВОЕ
+            "Teachers" => new TeachersViewModel(_teacherRepository),
+            "Dictionaries" => new DictionariesViewModel(_dictionaryRepository),
             _ => new PlaceholderViewModel("Раздел в разработке")
         };
 
