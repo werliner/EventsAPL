@@ -14,30 +14,40 @@ public class StudentsViewModel : ViewModelBase
     public ObservableCollection<Group> Groups { get; } = new();
     public ObservableCollection<Student> Students { get; } = new();
 
-    private Group? _selectedGroup;
-    public Group? SelectedGroup
+    private Group? _selectedGroupFilter;
+    public Group? SelectedGroupFilter
     {
-        get => _selectedGroup;
+        get => _selectedGroupFilter;
         set
         {
-            if (Set(ref _selectedGroup, value))
-                _ = LoadStudentsAsync(); // При смене группы сразу грузим её студентов
+            if (Set(ref _selectedGroupFilter, value))
+                _ = LoadStudentsAsync();
         }
     }
 
-    // Свойства для модального окна
-    private bool _isEditing;
-    public bool IsEditing
+    private Group? _selectedStudentGroup;
+    public Group? SelectedStudentGroup
     {
-        get => _isEditing;
-        set => Set(ref _isEditing, value);
+        get => _selectedStudentGroup;
+        set => Set(ref _selectedStudentGroup, value);
     }
+
+    private bool _isEditing;
+    public bool IsEditing { get => _isEditing; set => Set(ref _isEditing, value); }
 
     private Student? _selectedStudent;
     public Student? SelectedStudent
     {
         get => _selectedStudent;
-        set => Set(ref _selectedStudent, value);
+        set
+        {
+            if (Set(ref _selectedStudent, value))
+            {
+                // Обновляем доступность кнопок при выборе
+                OpenEditCommand?.RaiseCanExecuteChanged();
+                DeleteCommand?.RaiseCanExecuteChanged();
+            }
+        }
     }
 
     private string _editLastName = "";
@@ -49,7 +59,6 @@ public class StudentsViewModel : ViewModelBase
     private string _editMiddleName = "";
     public string EditMiddleName { get => _editMiddleName; set => Set(ref _editMiddleName, value); }
 
-    // Команды
     public RelayCommand LoadCommand { get; }
     public RelayCommand OpenAddCommand { get; }
     public RelayCommand OpenEditCommand { get; }
@@ -57,17 +66,17 @@ public class StudentsViewModel : ViewModelBase
     public RelayCommand CancelCommand { get; }
     public RelayCommand DeleteCommand { get; }
 
-    // Конструктор принимает репозитории и (опционально) ID группы для фильтра
     public StudentsViewModel(StudentRepository studentRepo, GroupRepository groupRepo, int? initialGroupId = null)
     {
         _studentRepo = studentRepo;
         _groupRepo = groupRepo;
 
-        LoadCommand = new RelayCommand(async _ => await LoadAllAsync());
+        LoadCommand = new RelayCommand(async _ => await LoadStudentsAsync());
 
         OpenAddCommand = new RelayCommand(_ => {
             SelectedStudent = null;
-            EditLastName = EditFirstName = EditMiddleName = "";
+            EditLastName = EditFirstName = EditMiddleName = string.Empty;
+            SelectedStudentGroup = SelectedGroupFilter;
             IsEditing = true;
         });
 
@@ -77,6 +86,7 @@ public class StudentsViewModel : ViewModelBase
                 EditLastName = SelectedStudent.LastName;
                 EditFirstName = SelectedStudent.FirstName;
                 EditMiddleName = SelectedStudent.MiddleName;
+                SelectedStudentGroup = Groups.FirstOrDefault(g => g.Id == SelectedStudent.GroupId);
                 IsEditing = true;
             }
         }, _ => SelectedStudent != null);
@@ -92,42 +102,32 @@ public class StudentsViewModel : ViewModelBase
     {
         try
         {
-            // Загружаем группы для ComboBox
             var groups = await _groupRepo.GetAllAsync();
             Groups.Clear();
             foreach (var g in groups) Groups.Add(g);
 
-            // Устанавливаем стартовую группу (если перешли из экрана Групп)
-            SelectedGroup = initialGroupId.HasValue
+            SelectedGroupFilter = initialGroupId.HasValue
                 ? Groups.FirstOrDefault(g => g.Id == initialGroupId.Value)
-                : Groups.FirstOrDefault(); // Если не передали, выбираем первую
+                : Groups.FirstOrDefault();
         }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Ошибка инициализации: {ex.Message}");
-        }
+        catch (Exception ex) { MessageBox.Show($"Ошибка инициализации: {ex.Message}"); }
     }
 
-    private async Task LoadAllAsync()
+    private async Task LoadStudentsAsync()
     {
-        if (SelectedGroup == null) return;
+        int groupId = SelectedGroupFilter?.Id ?? 0;
         try
         {
-            var list = await _studentRepo.GetByGroupAsync(SelectedGroup.Id);
+            var list = await _studentRepo.GetByGroupAsync(groupId);
             Students.Clear();
             foreach (var s in list) Students.Add(s);
         }
         catch (Exception ex) { MessageBox.Show($"Ошибка загрузки: {ex.Message}"); }
     }
 
-    private async Task LoadStudentsAsync()
-    {
-        await LoadAllAsync();
-    }
-
     private async Task SaveAsync()
     {
-        if (string.IsNullOrWhiteSpace(EditLastName) || SelectedGroup == null)
+        if (string.IsNullOrWhiteSpace(EditLastName) || SelectedStudentGroup == null)
         {
             MessageBox.Show("Введите фамилию и выберите группу!", "Внимание");
             return;
@@ -135,23 +135,23 @@ public class StudentsViewModel : ViewModelBase
 
         try
         {
-            if (SelectedStudent == null) // Создание
+            if (SelectedStudent == null)
             {
                 var newStudent = new Student
                 {
-                    GroupId = SelectedGroup.Id,
+                    GroupId = SelectedStudentGroup.Id,
                     LastName = EditLastName,
                     FirstName = EditFirstName,
                     MiddleName = EditMiddleName
                 };
                 await _studentRepo.AddAsync(newStudent);
             }
-            else // Редактирование
+            else
             {
                 SelectedStudent.LastName = EditLastName;
                 SelectedStudent.FirstName = EditFirstName;
                 SelectedStudent.MiddleName = EditMiddleName;
-                // GroupId пока оставим тот же, чтобы не усложнять
+                SelectedStudent.GroupId = SelectedStudentGroup.Id;
                 await _studentRepo.UpdateAsync(SelectedStudent);
             }
 

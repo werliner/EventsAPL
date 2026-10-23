@@ -14,35 +14,37 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Заголовок -->
+            <!-- ШАПКА С КНОПКАМИ -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <StackPanel>
                     <TextBlock Text="Студенты" FontSize="32" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
+                    <TextBlock Text="Управление списком студентов" FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,6,0,0"/>
                 </StackPanel>
+
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="Обновить" Command="{Binding LoadCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+                    <Button Content="Редактировать" Command="{Binding OpenEditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+                    <Button Content="Удалить" Command="{Binding DeleteCommand}" Style="{StaticResource DangerButton}" Margin="0,0,12,0"/>
                     <Button Content="+ Добавить" Command="{Binding OpenAddCommand}" Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Grid>
 
-            <!-- Фильтр по группам -->
+            <!-- ФИЛЬТР -->
             <StackPanel Grid.Row="1" Margin="0,0,0,16" Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="Фильтр по группе:" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="14" Foreground="{StaticResource TextSecondary}"/>
-
                 <ComboBox ItemsSource="{Binding Groups}" 
-                          SelectedItem="{Binding SelectedGroup}"
+                          SelectedItem="{Binding SelectedGroupFilter}" 
                           DisplayMemberPath="Number"
                           Style="{StaticResource AppComboBox}"
                           Width="200" />
-
             </StackPanel>
 
-            <!-- Список студентов (карточки) -->
+            <!-- СПИСОК -->
             <ListView Grid.Row="2" 
                       ItemsSource="{Binding Students}" 
                       SelectedItem="{Binding SelectedStudent}"
                       MouseDoubleClick="ListView_MouseDoubleClick"
-                      Background="Transparent" 
-                      BorderThickness="0"
+                      Background="Transparent" BorderThickness="0"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
@@ -50,7 +52,11 @@
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListViewItem">
                                     <Border x:Name="Bd" Background="{StaticResource SidebarBg}" CornerRadius="8" Padding="20,16" Margin="0,0,0,8" BorderThickness="1" BorderBrush="{StaticResource AppBorder}">
-                                        <TextBlock Text="{Binding FullName}" FontSize="16" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                        <Grid>
+                                            <TextBlock Text="{Binding FullName}" FontSize="16" Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center"/>
+                                            <!-- Группа справа -->
+                                            <TextBlock Text="{Binding GroupNumber}" FontSize="14" FontWeight="SemiBold" Foreground="{StaticResource Accent}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
@@ -69,11 +75,18 @@
             </ListView>
         </Grid>
 
-        <!-- Модальное окно -->
+        <!-- МОДАЛЬНОЕ ОКНО -->
         <Grid Background="#CC05120E" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="12" Width="500" Padding="32" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="Данные студента" FontSize="24" FontWeight="Bold" Margin="0,0,0,24" Foreground="{StaticResource TextPrimary}"/>
+
+                    <TextBlock Text="Группа" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
+                    <ComboBox ItemsSource="{Binding Groups}" 
+                              SelectedItem="{Binding SelectedStudentGroup}" 
+                              DisplayMemberPath="Number"
+                              Style="{StaticResource AppComboBox}"
+                              Height="40" Margin="0,0,0,16"/>
 
                     <TextBlock Text="Фамилия" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
                     <TextBox Text="{Binding EditLastName, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBox}" MinHeight="42" Margin="0,0,0,16"/>

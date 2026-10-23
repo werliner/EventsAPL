@@ -25,65 +25,57 @@
             <Grid Margin="16,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Grid.Column="0" Text="Учёт мероприятий" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <Button Grid.Column="0" Command="{Binding GoBackCommand}" Style="{StaticResource IconButton}" ToolTip="Назад (Mouse 4)" Margin="0,0,4,0">
+                    <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                </Button>
 
-                <TextBlock Grid.Column="2" Text="{Binding UserDisplayName}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}" Margin="0,0,12,0"/>
+                <Button Grid.Column="1" Command="{Binding GoForwardCommand}" Style="{StaticResource IconButton}" ToolTip="Вперед (Mouse 5)" Margin="0,0,12,0">
+                    <TextBlock Text="&#xE72A;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                </Button>
 
-                <Button Grid.Column="3" Style="{StaticResource PrimaryButton}" Content="Войти" Command="{Binding LoginCommand}" VerticalAlignment="Center" Padding="20,6"/>
+                <TextBlock Grid.Column="2" Text="Учёт мероприятий" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Column="4" Text="{Binding UserDisplayName}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}" Margin="0,0,12,0"/>
+
+                <Button Grid.Column="5" Style="{StaticResource PrimaryButton}" Content="Войти" Command="{Binding LoginCommand}" VerticalAlignment="Center" Padding="20,6"/>
             </Grid>
         </Border>
 
         <!-- =============== ОСНОВНАЯ ОБЛАСТЬ =============== -->
         <Grid Grid.Row="1">
-
-            <!-- ============ ОБЛАСТЬ КОНТЕНТА ============ -->
             <ContentControl Margin="88,16,16,16" Content="{Binding CurrentViewModel}">
                 <ContentControl.Resources>
-                    <!-- Связь для Групп -->
                     <DataTemplate DataType="{x:Type vm:GroupsViewModel}">
                         <views:GroupsView/>
                     </DataTemplate>
-
-                    <!-- Связь для Студентов (ВОТ ЭТОГО НЕ ХВАТАЛО!) -->
                     <DataTemplate DataType="{x:Type vm:StudentsViewModel}">
                         <views:StudentsView/>
                     </DataTemplate>
+                    <!-- ДОБАВИЛИ СЮДА ПРЕПОДАВАТЕЛЕЙ -->
+                    <DataTemplate DataType="{x:Type vm:TeachersViewModel}">
+                        <views:TeachersView/>
+                    </DataTemplate>
 
-                    <!-- Заглушка -->
                     <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
-                        <Border Background="{StaticResource AppSurface}" 
-                                BorderBrush="{StaticResource AppBorder}" 
-                                BorderThickness="1" 
-                                CornerRadius="10">
-                            <TextBlock Text="{Binding Text}" 
-                                       HorizontalAlignment="Center" 
-                                       VerticalAlignment="Center" 
-                                       FontSize="20" 
-                                       Foreground="{StaticResource TextSecondary}"/>
+                        <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="10">
+                            <TextBlock Text="{Binding Text}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Foreground="{StaticResource TextSecondary}"/>
                         </Border>
                     </DataTemplate>
                 </ContentControl.Resources>
             </ContentControl>
 
-            <!-- ============ SIDEBAR ============ -->
-            <Border HorizontalAlignment="Left"
-                    Background="{StaticResource SidebarBg}"
-                    BorderBrush="{StaticResource AppBorder}"
-                    BorderThickness="0,0,1,0"
-                    MouseEnter="Sidebar_MouseEnter"
-                    MouseLeave="Sidebar_MouseLeave"
-                    Panel.ZIndex="1">
-
+            <Border HorizontalAlignment="Left" Background="{StaticResource SidebarBg}" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,1,0" MouseEnter="Sidebar_MouseEnter" MouseLeave="Sidebar_MouseLeave" Panel.ZIndex="1">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Width" Value="72"/>
                         <Setter Property="MinWidth" Value="72"/>
-
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsSidebarExpanded}" Value="True">
                                 <DataTrigger.EnterActions>
