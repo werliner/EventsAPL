@@ -12,6 +12,7 @@ public class MainViewModel : ViewModelBase
 {
     private readonly GroupRepository _groupRepository;
     private readonly DictionaryRepository _dictionaryRepository = null!;
+    private readonly EventRepository _eventRepository = null!;
     private readonly StudentRepository _studentRepository;
     private readonly TeacherRepository _teacherRepository; // <-- НОВОЕ
 
@@ -65,6 +66,7 @@ public class MainViewModel : ViewModelBase
             _studentRepository = new StudentRepository(client);
             _teacherRepository = new TeacherRepository(client);
             _dictionaryRepository = new DictionaryRepository(client);
+            _eventRepository = new EventRepository(client);
 
             NavigateCommand = new RelayCommand(param => Navigate(param as string));
             LoginCommand = new RelayCommand(_ => MessageBox.Show("Окно авторизации появится позже"));
@@ -88,6 +90,7 @@ public class MainViewModel : ViewModelBase
             "Students" => new StudentsViewModel(_studentRepository, _groupRepository),
             "Teachers" => new TeachersViewModel(_teacherRepository),
             "Dictionaries" => new DictionariesViewModel(_dictionaryRepository),
+            "Events" => new EventsViewModel(_eventRepository, _dictionaryRepository),
             _ => new PlaceholderViewModel("Раздел в разработке")
         };
 

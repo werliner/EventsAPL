@@ -58,7 +58,7 @@
                     <DataTemplate DataType="{x:Type vm:StudentsViewModel}">
                         <views:StudentsView/>
                     </DataTemplate>
-                    <!-- ДОБАВИЛИ СЮДА ПРЕПОДАВАТЕЛЕЙ -->
+              
                     <DataTemplate DataType="{x:Type vm:TeachersViewModel}">
                         <views:TeachersView/>
                     </DataTemplate>
@@ -70,6 +70,9 @@
                     </DataTemplate>
                     <DataTemplate DataType="{x:Type vm:DictionariesViewModel}">
                         <views:DictionariesView/>
+                    </DataTemplate>
+                    <DataTemplate DataType="{x:Type vm:EventsViewModel}">
+                        <views:EventsView/>
                     </DataTemplate>
                 </ContentControl.Resources>
             </ContentControl>

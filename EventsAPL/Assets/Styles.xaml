@@ -8,7 +8,7 @@
         <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
     </Style>
 
-    <!-- ============ ГЛАВНАЯ КНОПКА (Изумрудная) ============ -->
+    <!-- ============ ГЛАВНАЯ КНОПКА ============ -->
     <Style x:Key="PrimaryButton" TargetType="Button">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="14"/>
@@ -37,7 +37,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ ВТОРИЧНАЯ КНОПКА (Серая) ============ -->
+    <!-- ============ ВТОРИЧНАЯ КНОПКА ============ -->
     <Style x:Key="SecondaryButton" TargetType="Button">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="14"/>
@@ -66,7 +66,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ КНОПКА УДАЛЕНИЯ (Красная) ============ -->
+    <!-- ============ КНОПКА УДАЛЕНИЯ ============ -->
     <Style x:Key="DangerButton" TargetType="Button">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="14"/>
@@ -95,7 +95,37 @@
         </Setter>
     </Style>
 
-    <!-- ============ ПОЛЕ ВВОДА (Стандартное, но красивое) ============ -->
+    <!-- ============ ИКОНОЧНАЯ КНОПКА ============ -->
+    <Style x:Key="IconButton" TargetType="Button">
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Width" Value="36"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.3"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ============ ПОЛЕ ВВОДА ============ -->
     <Style x:Key="AppTextBox" TargetType="TextBox">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="14"/>
@@ -106,8 +136,6 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="12,10"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
-
-        <!-- Оставляем стандартный шаблон, просто меняем цвета -->
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="BorderBrush" Value="{StaticResource Hover}"/>
@@ -117,7 +145,8 @@
             </Trigger>
         </Style.Triggers>
     </Style>
-    <!-- ============ ПУНКТ НАВИГАЦИИ (Боковое меню) ============ -->
+
+    <!-- ============ НАВИГАЦИЯ ============ -->
     <Style x:Key="NavItem" TargetType="RadioButton">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="14"/>
@@ -157,62 +186,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ ТАБЛИЦА (ListView) ============ -->
-    <!-- Фон таблицы -->
-    <Style TargetType="ListView">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
-    </Style>
-
-    <!-- Строка таблицы -->
-    <Style TargetType="ListViewItem">
-        <Setter Property="Padding" Value="0"/>
-        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ListViewItem">
-                    <!-- Увеличили паддинг до 16,12 и скруглили строку -->
-                    <Border x:Name="Bd" Background="Transparent" Padding="16,12" CornerRadius="6" Margin="0,2">
-                        <GridViewRowPresenter VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover}"/>
-                        </Trigger>
-                        <!-- При выборе используем полупрозрачный акцент -->
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentDim}"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <!-- Заголовок колонки -->
-    <Style TargetType="GridViewColumnHeader">
-        <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
-        <Setter Property="FontWeight" Value="SemiBold"/>
-        <Setter Property="BorderThickness" Value="0,0,0,1"/>
-        <Setter Property="BorderBrush" Value="{StaticResource AppBorder}"/>
-        <Setter Property="Padding" Value="10,12"/>
-        <Setter Property="HorizontalContentAlignment" Value="Left"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="GridViewColumnHeader">
-                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center"/>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-
-    <!-- ============ ЭЛЕМЕНТ СПИСКА ============ -->
+    <!-- ============ COMBOBOX ============ -->
     <Style x:Key="AppComboBoxItem" TargetType="ComboBoxItem">
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
         <Setter Property="FontSize" Value="13"/>
@@ -222,7 +196,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBoxItem">
                     <Border x:Name="Bd" Background="Transparent" Padding="{TemplateBinding Padding}" CornerRadius="4" Margin="2,1">
-                        <!-- Просто ContentPresenter без лишних привязок. WPF сам разберется. -->
                         <ContentPresenter />
                     </Border>
                     <ControlTemplate.Triggers>
@@ -239,7 +212,6 @@
         </Setter>
     </Style>
 
-    <!-- ============ COMBOBOX ============ -->
     <Style x:Key="AppComboBox" TargetType="ComboBox">
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
         <Setter Property="Background" Value="{StaticResource AppBackground}"/>
@@ -253,58 +225,31 @@
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
                     <Grid>
-                        <!-- Визуальная часть -->
-                        <Border x:Name="Bd" 
-                                Background="{TemplateBinding Background}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="6">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="24"/>
                                 </Grid.ColumnDefinitions>
-
-                                <ContentPresenter x:Name="ContentSite" 
-                                                  IsHitTestVisible="False" 
-                                                  Content="{TemplateBinding SelectionBoxItem}"
-                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                  Margin="{TemplateBinding Padding}"
-                                                  VerticalAlignment="Center" 
-                                                  HorizontalAlignment="Left"/>
-
-                                <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z" 
-                                      Fill="{StaticResource TextSecondary}" 
-                                      HorizontalAlignment="Center" VerticalAlignment="Center" 
-                                      IsHitTestVisible="False"/>
+                                <ContentPresenter x:Name="ContentSite" IsHitTestVisible="False" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Margin="{TemplateBinding Padding}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z" Fill="{StaticResource TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
                             </Grid>
                         </Border>
-
-                        <!-- Невидимая кнопка для клика -->
-                        <ToggleButton Background="Transparent" BorderThickness="0"
-                                      IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                        <ToggleButton Background="Transparent" BorderThickness="0" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border Background="Transparent"/>
                                 </ControlTemplate>
                             </ToggleButton.Template>
                         </ToggleButton>
-
-                        <!-- Выпадашка -->
-                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" 
-                               AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
-                            <Border MinWidth="{TemplateBinding ActualWidth}" 
-                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                    Background="{StaticResource SidebarBg}" 
-                                    BorderBrush="{StaticResource AppBorder}" 
-                                    BorderThickness="1" CornerRadius="6" Margin="0,4,0,0">
+                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{Binding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                            <Border MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{StaticResource SidebarBg}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,4,0,0">
                                 <ScrollViewer SnapsToDevicePixels="True" Margin="2">
                                     <ItemsPresenter/>
                                 </ScrollViewer>
                             </Border>
                         </Popup>
                     </Grid>
-
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
@@ -318,29 +263,123 @@
         </Setter>
     </Style>
 
-    <!-- ============ ИКОНОЧНАЯ КНОПКА (для стрелочек назад/вперед) ============ -->
-    <Style x:Key="IconButton" TargetType="Button">
-        <Setter Property="FontFamily" Value="Segoe UI"/>
-        <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+    <!-- ============ DATE PICKER & CALENDAR ============ -->
+
+    <!-- Стиль для Дней (без ховера, чтобы не было артефактов) -->
+    <Style TargetType="CalendarDayButton">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Width" Value="36"/>
-        <Setter Property="Height" Value="36"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Margin" Value="1"/>
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="6">
+                <ControlTemplate TargetType="CalendarDayButton">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Accent}"/>
+                            <Setter Property="Foreground" Value="{StaticResource TextOnAccent}"/>
+                        </Trigger>
+                        <Trigger Property="IsInactive" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+                            <Setter Property="Opacity" Value="0.3"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Стиль для кнопок месяцев/лет -->
+    <Style TargetType="CalendarButton">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CalendarButton">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="4">
                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover}"/>
-                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                         </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="Bd" Property="Opacity" Value="0.3"/>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Календарь (ОБОРАЧИВАЕМ СТАНДАРТНЫЙ CalendarItem В ТЕМНЫЙ BORDER) -->
+    <Style x:Key="AppCalendar" TargetType="Calendar">
+        <Setter Property="Background" Value="{StaticResource AppSurface}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource AppBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Calendar">
+                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="4">
+                        <!-- НЕ ПЕРЕОПРЕДЕЛЯЕМ ШАБЛОН CalendarItem, ПУСТЬ WPF САМА РАЗБЕРЕТСЯ С КЛИКАМИ -->
+                        <CalendarItem x:Name="PART_CalendarItem" Background="Transparent" BorderThickness="0"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Сам DatePicker -->
+    <Style x:Key="AppDatePicker" TargetType="DatePicker">
+        <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        <Setter Property="Background" Value="{StaticResource AppBackground}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource AppBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <!-- ПРИВЯЗЫВАЕМ НАШ ТЕМНЫЙ КАЛЕНДАРЬ -->
+        <Setter Property="CalendarStyle" Value="{StaticResource AppCalendar}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DatePicker">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                        <Grid x:Name="PART_Root" HorizontalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <DatePickerTextBox x:Name="PART_TextBox" Grid.Column="0" Background="Transparent" BorderThickness="0" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="10,0,0,0">
+                                <DatePickerTextBox.Template>
+                                    <ControlTemplate TargetType="DatePickerTextBox">
+                                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                                    </ControlTemplate>
+                                </DatePickerTextBox.Template>
+                            </DatePickerTextBox>
+
+                            <Button x:Name="PART_Button" Grid.Column="1" Background="Transparent" BorderThickness="0" Width="36" Height="36" Margin="0,0,2,0" Focusable="False">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="BtnBd" Background="Transparent" CornerRadius="4">
+                                            <TextBlock Text="&#xE787;" FontFamily="Segoe MDL2 Assets" FontSize="16" Foreground="{StaticResource TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="BtnBd" Property="Background" Value="{StaticResource Hover}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- ПУСТО! WPF сам вставит Calendar со стилем AppCalendar -->
+                            <Popup x:Name="PART_Popup"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

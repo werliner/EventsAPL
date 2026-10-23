@@ -6,10 +6,16 @@ namespace EventsAPL.Views;
 
 public partial class DictionariesView : UserControl
 {
-    public DictionariesView() => InitializeComponent();
+    public DictionariesView()
+    {
+        InitializeComponent();
+    }
 
     private void ListView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (DataContext is DictionariesViewModel vm) vm.OpenEditCommand.Execute(null);
+        if (DataContext is DictionariesViewModel vm)
+        {
+            vm.OpenEditCommand.Execute(null);
+        }
     }
 }
