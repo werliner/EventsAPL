@@ -7,14 +7,12 @@
     </UserControl.Resources>
 
     <Grid>
-        <!-- ================= ОСНОВНОЙ ЭКРАН ================= -->
         <Grid Margin="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Заголовок -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <StackPanel>
                     <TextBlock Text="Группы" FontSize="32" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
@@ -22,12 +20,12 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="Показать студентов →" Command="{Binding ViewStudentsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Обновить" Command="{Binding LoadCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="+ Добавить" Command="{Binding OpenAddCommand}" Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Grid>
 
-            <!-- СПИСОК-КАРТОЧКИ (Вместо скучной таблицы) -->
             <ListView Grid.Row="1" 
                       ItemsSource="{Binding Groups}" 
                       SelectedItem="{Binding SelectedGroup}"
@@ -40,7 +38,6 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListViewItem">
-                                    <!-- Делаем красивую плашку для каждой строки -->
                                     <Border x:Name="Bd" Background="{StaticResource SidebarBg}" CornerRadius="8" Padding="20,16" Margin="0,0,0,8" BorderThickness="1" BorderBrush="{StaticResource AppBorder}">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
@@ -69,29 +66,16 @@
             </ListView>
         </Grid>
 
-        <!-- ================= МОДАЛЬНОЕ ОКНО ================= -->
-        <!-- Убрали DropShadowEffect, чтобы не было мыла. Используем чуть более темный фон -->
-        <Grid Background="#CC05120E" 
-              Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
-
-            <Border Background="{StaticResource AppSurface}"
-                    BorderBrush="{StaticResource AppBorder}" BorderThickness="1"
-                    CornerRadius="12" Width="500" Padding="32"
-                    VerticalAlignment="Center" HorizontalAlignment="Center">
-                <!-- Тень убрана! -->
-
+        <Grid Background="#CC05120E" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="12" Width="500" Padding="32" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="Редактирование группы" FontSize="24" FontWeight="Bold" Margin="0,0,0,24" Foreground="{StaticResource TextPrimary}"/>
 
                     <TextBlock Text="Номер группы" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
-                    <TextBox Text="{Binding EditNumber, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource AppTextBox}" 
-                             MinHeight="42" Margin="0,0,0,16"/>
+                    <TextBox Text="{Binding EditNumber, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBox}" MinHeight="42" Margin="0,0,0,16"/>
 
                     <TextBlock Text="Название группы" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
-                    <TextBox Text="{Binding EditTitle, UpdateSourceTrigger=PropertyChanged}" 
-                             Style="{StaticResource AppTextBox}" 
-                             MinHeight="42" Margin="0,0,0,32"/>
+                    <TextBox Text="{Binding EditTitle, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBox}" MinHeight="42" Margin="0,0,0,32"/>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                         <Button Content="Отмена" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Height="42" Margin="0,0,12,0" Width="100"/>
@@ -100,6 +84,5 @@
                 </StackPanel>
             </Border>
         </Grid>
-
     </Grid>
 </UserControl>

@@ -41,16 +41,20 @@
         <!-- =============== ОСНОВНАЯ ОБЛАСТЬ =============== -->
         <Grid Grid.Row="1">
 
-            <!-- ============ ОБЛАСТЬ КОНТЕНТА (ПОД сайдбаром) ============ -->
-
+            <!-- ============ ОБЛАСТЬ КОНТЕНТА ============ -->
             <ContentControl Margin="88,16,16,16" Content="{Binding CurrentViewModel}">
                 <ContentControl.Resources>
-                    <!-- Когда CurrentViewModel = GroupsViewModel, показываем GroupsView -->
+                    <!-- Связь для Групп -->
                     <DataTemplate DataType="{x:Type vm:GroupsViewModel}">
                         <views:GroupsView/>
                     </DataTemplate>
 
-                    <!-- Для всех остальных (пока) — текст-заглушка -->
+                    <!-- Связь для Студентов (ВОТ ЭТОГО НЕ ХВАТАЛО!) -->
+                    <DataTemplate DataType="{x:Type vm:StudentsViewModel}">
+                        <views:StudentsView/>
+                    </DataTemplate>
+
+                    <!-- Заглушка -->
                     <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
                         <Border Background="{StaticResource AppSurface}" 
                                 BorderBrush="{StaticResource AppBorder}" 
@@ -66,7 +70,7 @@
                 </ContentControl.Resources>
             </ContentControl>
 
-            <!-- ============ SIDEBAR (ПОВЕРХ контента) ============ -->
+            <!-- ============ SIDEBAR ============ -->
             <Border HorizontalAlignment="Left"
                     Background="{StaticResource SidebarBg}"
                     BorderBrush="{StaticResource AppBorder}"
