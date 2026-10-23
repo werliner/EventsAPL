@@ -1,11 +1,15 @@
-﻿using EventsAPL.Base;
+﻿using System.IO;
+using System.Text.Json;
 using System.Windows;
+using EventsAPL.Base;
+using EventsAPL.Data;
 
 namespace EventsAPL.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {
-    // ---------- Наведена ли мышь на sidebar ----------
+    private readonly GroupRepository _groupRepository;
+
     private bool _isSidebarHovered;
     public bool IsSidebarHovered
     {
@@ -17,25 +21,16 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    // Sidebar раскрыт ТОЛЬКО когда на него наведена мышь
     public bool IsSidebarExpanded => IsSidebarHovered;
 
-    // ---------- Текущий раздел ----------
-    private string _currentTitle = "Мероприятия";
-    public string CurrentTitle
+    // Текущая ViewModel, которая отображается на экране
+    private ViewModelBase? _currentViewModel;
+    public ViewModelBase? CurrentViewModel
     {
-        get => _currentTitle;
-        set => Set(ref _currentTitle, value);
+        get => _currentViewModel;
+        set => Set(ref _currentViewModel, value);
     }
 
-    private string _currentIcon = "\uE787";
-    public string CurrentIcon
-    {
-        get => _currentIcon;
-        set => Set(ref _currentIcon, value);
-    }
-
-    // ---------- Пользователь ----------
     private string _userDisplayName = "Гость";
     public string UserDisplayName
     {
@@ -43,28 +38,36 @@ public class MainViewModel : ViewModelBase
         set => Set(ref _userDisplayName, value);
     }
 
-    // ---------- Команды ----------
     public RelayCommand NavigateCommand { get; }
     public RelayCommand LoginCommand { get; }
 
     public MainViewModel()
     {
+        // Читаем настройки
+        string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+        var config = JsonDocument.Parse(File.ReadAllText(configPath)).RootElement.GetProperty("Turso");
+
+        string url = config.GetProperty("Url").GetString()!;
+        string token = config.GetProperty("Token").GetString()!;
+
+        // Инициализируем БД
+        var client = new TursoClient(url, token);
+        _groupRepository = new GroupRepository(client);
+
         NavigateCommand = new RelayCommand(param => Navigate(param as string));
         LoginCommand = new RelayCommand(_ => MessageBox.Show("Окно авторизации появится позже"));
+
+        // Открываем Мероприятия по умолчанию
+        Navigate("Events");
     }
 
     private void Navigate(string? key)
     {
-        (CurrentTitle, CurrentIcon) = key switch
+        CurrentViewModel = key switch
         {
-            "Events" => ("Мероприятия", "\uE787"),
-            "Groups" => ("Группы", "\uE716"),
-            "Students" => ("Студенты", "\uE77B"),
-            "Teachers" => ("Преподаватели", "\uE7BE"),
-            "Dictionaries" => ("Справочники", "\uE8F1"),
-            "Log" => ("Журнал действий", "\uE81C"),
-            "Admin" => ("Администрирование", "\uE713"),
-            _ => (CurrentTitle, CurrentIcon)
+            "Groups" => new GroupsViewModel(_groupRepository),
+            // Пока для остальных экранов используем заглушку
+            _ => new PlaceholderViewModel("Раздел в разработке")
         };
     }
 }
