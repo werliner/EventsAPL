@@ -1,8 +1,9 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
-using EventsAPL.Base;
+﻿using EventsAPL.Base;
 using EventsAPL.Data;
 using EventsAPL.Models;
+using EventsAPL.Views;
+using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace EventsAPL.ViewModels;
 
@@ -10,6 +11,10 @@ public class EventsViewModel : ViewModelBase
 {
     private readonly EventRepository _eventRepo;
     private readonly DictionaryRepository _dictRepo;
+    private readonly ParticipantRepository _participantRepo;
+    private readonly StudentRepository _studentRepo;
+    private readonly TeacherRepository _teacherRepo;
+    private readonly GroupRepository _groupRepo;
 
     public ObservableCollection<Event> Events { get; } = new();
     public ObservableCollection<DictionaryItem> Levels { get; } = new();
@@ -28,11 +33,11 @@ public class EventsViewModel : ViewModelBase
             {
                 OpenEditCommand?.RaiseCanExecuteChanged();
                 DeleteCommand?.RaiseCanExecuteChanged();
+                OpenParticipantsCommand?.RaiseCanExecuteChanged();
             }
         }
     }
 
-    // Поля для модального окна
     private string _editTitle = string.Empty;
     public string EditTitle { get => _editTitle; set => Set(ref _editTitle, value); }
 
@@ -48,18 +53,24 @@ public class EventsViewModel : ViewModelBase
     private DateTime? _editEndDate;
     public DateTime? EditEndDate { get => _editEndDate; set => Set(ref _editEndDate, value); }
 
-    // Команды
     public RelayCommand LoadCommand { get; }
     public RelayCommand OpenAddCommand { get; }
     public RelayCommand OpenEditCommand { get; }
     public RelayCommand SaveCommand { get; }
     public RelayCommand CancelCommand { get; }
     public RelayCommand DeleteCommand { get; }
+    public RelayCommand OpenParticipantsCommand { get; }
 
-    public EventsViewModel(EventRepository eventRepo, DictionaryRepository dictRepo)
+    public EventsViewModel(EventRepository eventRepo, DictionaryRepository dictRepo,
+                           ParticipantRepository participantRepo, StudentRepository studentRepo,
+                           TeacherRepository teacherRepo, GroupRepository groupRepo)
     {
         _eventRepo = eventRepo;
         _dictRepo = dictRepo;
+        _participantRepo = participantRepo;
+        _studentRepo = studentRepo;
+        _teacherRepo = teacherRepo;
+        _groupRepo = groupRepo;
 
         LoadCommand = new RelayCommand(async _ => await LoadAsync());
 
@@ -85,6 +96,16 @@ public class EventsViewModel : ViewModelBase
             }
         }, _ => SelectedEvent != null);
 
+        OpenParticipantsCommand = new RelayCommand(_ => {
+            if (SelectedEvent != null)
+            {
+                var vm = new EventParticipantsViewModel(SelectedEvent, _participantRepo, _studentRepo, _teacherRepo, _groupRepo, _dictRepo);
+                var view = new EventParticipantsView(vm);
+                view.Owner = Application.Current.MainWindow;
+                view.ShowDialog();
+            }
+        }, _ => SelectedEvent != null);
+
         SaveCommand = new RelayCommand(async _ => await SaveAsync());
         CancelCommand = new RelayCommand(_ => IsEditing = false);
         DeleteCommand = new RelayCommand(async _ => await DeleteAsync(), _ => SelectedEvent != null);
@@ -96,7 +117,6 @@ public class EventsViewModel : ViewModelBase
     {
         try
         {
-            // Грузим справочники
             var levels = await _dictRepo.GetAllAsync("EventLevels");
             Levels.Clear(); foreach (var l in levels) Levels.Add(l);
 

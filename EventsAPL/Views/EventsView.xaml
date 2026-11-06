@@ -22,6 +22,7 @@
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Content="Обновить" Command="{Binding LoadCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+                    <Button Content="Участники" Command="{Binding OpenParticipantsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Редактировать" Command="{Binding OpenEditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Удалить" Command="{Binding DeleteCommand}" Style="{StaticResource DangerButton}" Margin="0,0,12,0"/>
                     <Button Content="+ Добавить" Command="{Binding OpenAddCommand}" Style="{StaticResource PrimaryButton}"/>

@@ -125,7 +125,7 @@
         </Setter>
     </Style>
 
-    <!-- ============ ПОЛЕ ВВОДА ============ -->
+    <!-- ============ ПОЛЕ ВВОДА (ИСПРАВЛЕНО) ============ -->
     <Style x:Key="AppTextBox" TargetType="TextBox">
         <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="14"/>
@@ -136,14 +136,24 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="12,10"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Style.Triggers>
-            <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource Hover}"/>
-            </Trigger>
-            <Trigger Property="IsFocused" Value="True">
-                <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
-            </Trigger>
-        </Style.Triggers>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
+                        <!-- Убрали VerticalAlignment="Center", чтобы скролл не сжимался в ноль и клик работал -->
+                        <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}" VerticalAlignment="Stretch"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsFocused" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ============ НАВИГАЦИЯ ============ -->
@@ -186,12 +196,14 @@
         </Setter>
     </Style>
 
-    <!-- ============ COMBOBOX ============ -->
+    <!-- ============ COMBOBOX (ИСПРАВЛЕНО) ============ -->
     <Style x:Key="AppComboBoxItem" TargetType="ComboBoxItem">
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
         <Setter Property="FontSize" Value="13"/>
         <Setter Property="Padding" Value="10,6"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="IsHitTestVisible" Value="True"/>
+        <!-- Принудительно включаем клики -->
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBoxItem">
@@ -235,14 +247,15 @@
                                 <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z" Fill="{StaticResource TextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
                             </Grid>
                         </Border>
-                        <ToggleButton Background="Transparent" BorderThickness="0" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                        <!-- Прозрачная кнопка сверху, которая ловит клики -->
+                        <ToggleButton Background="Transparent" BorderThickness="0" Focusable="False" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
                             <ToggleButton.Template>
                                 <ControlTemplate TargetType="ToggleButton">
                                     <Border Background="Transparent"/>
                                 </ControlTemplate>
                             </ToggleButton.Template>
                         </ToggleButton>
-                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{Binding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
+                        <Popup x:Name="PART_Popup" Placement="Bottom" IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True" Focusable="False" PopupAnimation="Slide">
                             <Border MinWidth="{TemplateBinding ActualWidth}" MaxHeight="{TemplateBinding MaxDropDownHeight}" Background="{StaticResource SidebarBg}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,4,0,0">
                                 <ScrollViewer SnapsToDevicePixels="True" Margin="2">
                                     <ItemsPresenter/>
@@ -265,7 +278,6 @@
 
     <!-- ============ DATE PICKER & CALENDAR ============ -->
 
-    <!-- Стиль для Дней (без ховера, чтобы не было артефактов) -->
     <Style TargetType="CalendarDayButton">
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
         <Setter Property="Background" Value="Transparent"/>
@@ -291,7 +303,6 @@
         </Setter>
     </Style>
 
-    <!-- Стиль для кнопок месяцев/лет -->
     <Style TargetType="CalendarButton">
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
         <Setter Property="Background" Value="Transparent"/>
@@ -311,7 +322,6 @@
         </Setter>
     </Style>
 
-    <!-- Календарь (ОБОРАЧИВАЕМ СТАНДАРТНЫЙ CalendarItem В ТЕМНЫЙ BORDER) -->
     <Style x:Key="AppCalendar" TargetType="Calendar">
         <Setter Property="Background" Value="{StaticResource AppSurface}"/>
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
@@ -321,7 +331,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Calendar">
                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="4">
-                        <!-- НЕ ПЕРЕОПРЕДЕЛЯЕМ ШАБЛОН CalendarItem, ПУСТЬ WPF САМА РАЗБЕРЕТСЯ С КЛИКАМИ -->
                         <CalendarItem x:Name="PART_CalendarItem" Background="Transparent" BorderThickness="0"/>
                     </Border>
                 </ControlTemplate>
@@ -329,13 +338,12 @@
         </Setter>
     </Style>
 
-    <!-- Сам DatePicker -->
+    <!-- DatePicker (ИСПРАВЛЕНО ВЫРАВНИВАНИЕ) -->
     <Style x:Key="AppDatePicker" TargetType="DatePicker">
         <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
         <Setter Property="Background" Value="{StaticResource AppBackground}"/>
         <Setter Property="BorderBrush" Value="{StaticResource AppBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <!-- ПРИВЯЗЫВАЕМ НАШ ТЕМНЫЙ КАЛЕНДАРЬ -->
         <Setter Property="CalendarStyle" Value="{StaticResource AppCalendar}"/>
         <Setter Property="Template">
             <Setter.Value>
@@ -350,7 +358,8 @@
                             <DatePickerTextBox x:Name="PART_TextBox" Grid.Column="0" Background="Transparent" BorderThickness="0" Foreground="{TemplateBinding Foreground}" VerticalAlignment="Center" Margin="10,0,0,0">
                                 <DatePickerTextBox.Template>
                                     <ControlTemplate TargetType="DatePickerTextBox">
-                                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Center"/>
+                                        <!-- Убрали VerticalAlignment="Center", чтобы можно было кликнуть -->
+                                        <ScrollViewer x:Name="PART_ContentHost" VerticalAlignment="Stretch"/>
                                     </ControlTemplate>
                                 </DatePickerTextBox.Template>
                             </DatePickerTextBox>
@@ -370,7 +379,6 @@
                                 </Button.Template>
                             </Button>
 
-                            <!-- ПУСТО! WPF сам вставит Calendar со стилем AppCalendar -->
                             <Popup x:Name="PART_Popup"/>
                         </Grid>
                     </Border>

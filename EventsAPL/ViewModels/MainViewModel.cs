@@ -10,11 +10,12 @@ namespace EventsAPL.ViewModels;
 
 public class MainViewModel : ViewModelBase
 {
-    private readonly GroupRepository _groupRepository;
+    private readonly GroupRepository _groupRepository = null!;
+    private readonly StudentRepository _studentRepository = null!;
+    private readonly TeacherRepository _teacherRepository = null!;
     private readonly DictionaryRepository _dictionaryRepository = null!;
     private readonly EventRepository _eventRepository = null!;
-    private readonly StudentRepository _studentRepository;
-    private readonly TeacherRepository _teacherRepository; // <-- НОВОЕ
+    private readonly ParticipantRepository _participantRepository = null!;
 
     private readonly Stack<ViewModelBase> _backStack = new();
     private readonly Stack<ViewModelBase> _forwardStack = new();
@@ -46,10 +47,10 @@ public class MainViewModel : ViewModelBase
         set => Set(ref _userDisplayName, value);
     }
 
-    public RelayCommand NavigateCommand { get; }
-    public RelayCommand LoginCommand { get; }
-    public RelayCommand GoBackCommand { get; }
-    public RelayCommand GoForwardCommand { get; }
+    public RelayCommand NavigateCommand { get; } = null!;
+    public RelayCommand LoginCommand { get; } = null!;
+    public RelayCommand GoBackCommand { get; } = null!;
+    public RelayCommand GoForwardCommand { get; } = null!;
 
     public MainViewModel()
     {
@@ -67,6 +68,7 @@ public class MainViewModel : ViewModelBase
             _teacherRepository = new TeacherRepository(client);
             _dictionaryRepository = new DictionaryRepository(client);
             _eventRepository = new EventRepository(client);
+            _participantRepository = new ParticipantRepository(client);
 
             NavigateCommand = new RelayCommand(param => Navigate(param as string));
             LoginCommand = new RelayCommand(_ => MessageBox.Show("Окно авторизации появится позже"));
@@ -90,7 +92,7 @@ public class MainViewModel : ViewModelBase
             "Students" => new StudentsViewModel(_studentRepository, _groupRepository),
             "Teachers" => new TeachersViewModel(_teacherRepository),
             "Dictionaries" => new DictionariesViewModel(_dictionaryRepository),
-            "Events" => new EventsViewModel(_eventRepository, _dictionaryRepository),
+            "Events" => new EventsViewModel(_eventRepository, _dictionaryRepository, _participantRepository, _studentRepository, _teacherRepository, _groupRepository),
             _ => new PlaceholderViewModel("Раздел в разработке")
         };
 
