@@ -62,7 +62,11 @@ public class EventParticipantsViewModel : ViewModelBase
             if (Set(ref _isStudentMode, value)) OnPropertyChanged(nameof(IsTeacherMode));
         }
     }
-    public bool IsTeacherMode => !IsStudentMode;
+    public bool IsTeacherMode
+    {
+        get => !IsStudentMode;
+        set => IsStudentMode = !value;
+    }
 
     public RelayCommand SaveCommand { get; }
     public RelayCommand CancelCommand { get; }

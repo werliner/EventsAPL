@@ -4,7 +4,7 @@
         Title="Участники мероприятия"
         Width="900" Height="650"
         WindowStartupLocation="CenterOwner"
-        Background="{StaticResource AppSurface}">
+        Background="{StaticResource AppBackground}">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -18,16 +18,21 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource AppBackground}" Padding="20" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,0,1">
-            <TextBlock Text="{Binding EventTitle, StringFormat='Участники: {0}'}" FontSize="20" FontWeight="Bold"/>
+        <!-- Заголовок -->
+        <Border Grid.Row="0" Background="{StaticResource AppSurface}" Padding="20" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,0,1">
+            <TextBlock Text="{Binding EventTitle, StringFormat='Участники: {0}'}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
         </Border>
 
+        <!-- Переключатель вкладок -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="20,16,20,8">
             <RadioButton Content="Студенты" IsChecked="{Binding IsStudentMode, Mode=TwoWay}" GroupName="Mode" Style="{StaticResource NavItem}" Width="120" Margin="0,0,10,0"/>
             <RadioButton Content="Преподаватели" IsChecked="{Binding IsTeacherMode, Mode=TwoWay}" GroupName="Mode" Style="{StaticResource NavItem}" Width="150"/>
         </StackPanel>
 
+        <!-- Основная область -->
         <Grid Grid.Row="2" Margin="20,0,20,16">
+
+            <!-- ВКЛАДКА: СТУДЕНТЫ -->
             <Grid Visibility="{Binding IsStudentMode, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -35,64 +40,74 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
-                    <TextBlock Text="Группа:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Группа:" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{StaticResource TextSecondary}"/>
                     <ComboBox ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}" DisplayMemberPath="Number" Style="{StaticResource AppComboBox}" Width="200"/>
                 </StackPanel>
 
-                <ListView Grid.Row="1" ItemsSource="{Binding AvailableStudents}" Background="Transparent" BorderThickness="0">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="150"/>
-                                    <ColumnDefinition Width="150"/>
-                                </Grid.ColumnDefinitions>
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding AvailableStudents}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8" Padding="12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="160"/>
+                                            <ColumnDefinition Width="160"/>
+                                        </Grid.ColumnDefinitions>
 
-                                <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Student.FullName}" VerticalAlignment="Center"/>
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Student.FullName}" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}" FontSize="14"/>
 
-                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.ResultTypes, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                          SelectedItem="{Binding SelectedResultType}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Margin="0,0,10,0"/>
-                                <ComboBox Grid.Column="3" ItemsSource="{Binding DataContext.ResultLevels, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                          SelectedItem="{Binding SelectedResultLevel}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                                        <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.ResultTypes, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                  SelectedItem="{Binding SelectedResultType}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Margin="0,0,12,0"/>
+                                        <ComboBox Grid.Column="3" ItemsSource="{Binding DataContext.ResultLevels, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                  SelectedItem="{Binding SelectedResultLevel}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
 
+            <!-- ВКЛАДКА: ПРЕПОДАВАТЕЛИ -->
             <Grid Visibility="{Binding IsTeacherMode, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <ListView ItemsSource="{Binding AvailableTeachers}" Background="Transparent" BorderThickness="0">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Margin="0,4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="150"/>
-                                    <ColumnDefinition Width="150"/>
-                                </Grid.ColumnDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <ItemsControl ItemsSource="{Binding AvailableTeachers}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8" Padding="12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="160"/>
+                                            <ColumnDefinition Width="160"/>
+                                        </Grid.ColumnDefinitions>
 
-                                <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Teacher.FullName}" VerticalAlignment="Center"/>
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Teacher.FullName}" VerticalAlignment="Center" Foreground="{StaticResource TextPrimary}" FontSize="14"/>
 
-                                <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.ResultTypes, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                          SelectedItem="{Binding SelectedResultType}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Margin="0,0,10,0"/>
-                                <ComboBox Grid.Column="3" ItemsSource="{Binding DataContext.ResultLevels, RelativeSource={RelativeSource AncestorType=Window}}" 
-                                          SelectedItem="{Binding SelectedResultLevel}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                                        <ComboBox Grid.Column="2" ItemsSource="{Binding DataContext.ResultTypes, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                  SelectedItem="{Binding SelectedResultType}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Margin="0,0,12,0"/>
+                                        <ComboBox Grid.Column="3" ItemsSource="{Binding DataContext.ResultLevels, RelativeSource={RelativeSource AncestorType=Window}}" 
+                                                  SelectedItem="{Binding SelectedResultLevel}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </Grid>
         </Grid>
 
-        <Border Grid.Row="3" Background="{StaticResource AppBackground}" Padding="20,16" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,1,0,0">
+        <!-- Кнопки -->
+        <Border Grid.Row="3" Background="{StaticResource AppSurface}" Padding="20,16" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Отмена" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Width="100" Margin="0,0,12,0"/>
-                <Button Content="Сохранить участников" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Width="180"/>
+                <Button Content="Отмена" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+                <Button Content="Сохранить участников" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}"/>
             </StackPanel>
         </Border>
     </Grid>

@@ -22,6 +22,10 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                     <Button Content="Показать студентов →" Command="{Binding ViewStudentsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Обновить" Command="{Binding LoadCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+
+                    <!-- ВОТ ЭТА КНОПКА -->
+                    <Button Content="Удалить" Command="{Binding DeleteCommand}" Style="{StaticResource DangerButton}" Margin="0,0,12,0"/>
+
                     <Button Content="+ Добавить" Command="{Binding OpenAddCommand}" Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Grid>

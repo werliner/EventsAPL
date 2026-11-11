@@ -13,15 +13,20 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- ШАПКА -->
+            <!-- ШАПКА ЭКРАНА -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <StackPanel>
-                    <TextBlock Text="Мероприятия" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
-                    <TextBlock Text="Управление списком мероприятий" FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0"/>
+                    <TextBlock Text="Мероприятия" FontSize="32" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
+                    <TextBlock Text="Управление списком мероприятий" FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,6,0,0"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Content="Участники" Command="{Binding OpenParticipantsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+                    <!-- Поиск -->
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+                             Style="{StaticResource AppTextBox}" 
+                             Width="220" Margin="0,0,12,0" VerticalAlignment="Center"
+                             ToolTip="Поиск по названию"/>
+
                     <Button Content="Обновить" Command="{Binding LoadCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Редактировать" Command="{Binding OpenEditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Удалить" Command="{Binding DeleteCommand}" Style="{StaticResource DangerButton}" Margin="0,0,12,0"/>
@@ -84,7 +89,7 @@
 
         <!-- МОДАЛЬНОЕ ОКНО -->
         <Grid Background="#CC0A0F14" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="12" Width="600" Padding="32" VerticalAlignment="Center" HorizontalAlignment="Center">
+            <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="12" Width="650" Padding="32" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="Данные мероприятия" FontSize="20" FontWeight="Bold" Margin="0,0,0,24" Foreground="{StaticResource TextPrimary}"/>
 
@@ -125,9 +130,22 @@
                         </StackPanel>
                     </Grid>
 
+                    <!-- КНОПКИ -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Отмена" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Height="40" Margin="0,0,12,0" Width="100"/>
-                        <Button Content="Сохранить" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Height="40" Width="120"/>
+                        <Button Content="Отмена" 
+                                Command="{Binding CancelCommand}" 
+                                Style="{StaticResource SecondaryButton}" 
+                                Height="40" Margin="0,0,12,0" Width="100"/>
+
+                        <Button Content="Сохранить и добавить участников" 
+                                Command="{Binding OpenParticipantsCommand}" 
+                                Style="{StaticResource SecondaryButton}" 
+                                Height="40" Margin="0,0,12,0" Width="260"/>
+
+                        <Button Content="Сохранить" 
+                                Command="{Binding SaveCommand}" 
+                                Style="{StaticResource PrimaryButton}" 
+                                Height="40" Width="120"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

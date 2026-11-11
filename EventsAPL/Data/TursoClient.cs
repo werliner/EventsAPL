@@ -11,16 +11,19 @@ public class TursoClient
     private readonly HttpClient _httpClient;
     private readonly string _url;
 
+    // В конструкторе TursoClient
     public TursoClient(string url, string token)
     {
         _url = url;
-        _httpClient = new HttpClient();
-
-        // Настраиваем заголовки авторизации для Turso
-        _httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
+        var handler = new SocketsHttpHandler
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5), // Принудительно обновлять соединения
+            ConnectTimeout = TimeSpan.FromSeconds(30) // Таймаут на подключение
+        };
+        _httpClient = new HttpClient(handler);
+        _httpClient.Timeout = TimeSpan.FromSeconds(60); // Общий таймаут
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
-
     /// <summary>
     /// Отправляет SQL-запрос в Turso и возвращает ответ в формате JSON.
     /// </summary>

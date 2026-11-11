@@ -16,6 +16,8 @@ public class EventsViewModel : ViewModelBase
     private readonly TeacherRepository _teacherRepo;
     private readonly GroupRepository _groupRepo;
 
+    private List<Event> _allEvents = new();
+
     public ObservableCollection<Event> Events { get; } = new();
     public ObservableCollection<DictionaryItem> Levels { get; } = new();
     public ObservableCollection<DictionaryItem> Types { get; } = new();
@@ -34,8 +36,18 @@ public class EventsViewModel : ViewModelBase
                 OpenEditCommand?.RaiseCanExecuteChanged();
                 DeleteCommand?.RaiseCanExecuteChanged();
                 OpenParticipantsCommand?.RaiseCanExecuteChanged();
+                OnPropertyChanged(nameof(CanEditParticipants));
             }
         }
+    }
+
+    public bool CanEditParticipants => SelectedEvent != null && IsEditing;
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set { if (Set(ref _searchText, value)) ApplyFilter(); }
     }
 
     private string _editTitle = string.Empty;
@@ -82,6 +94,7 @@ public class EventsViewModel : ViewModelBase
             EditStartDate = DateTime.Today;
             EditEndDate = null;
             IsEditing = true;
+            OnPropertyChanged(nameof(CanEditParticipants));
         });
 
         OpenEditCommand = new RelayCommand(_ => {
@@ -93,10 +106,19 @@ public class EventsViewModel : ViewModelBase
                 EditStartDate = SelectedEvent.StartDate;
                 EditEndDate = SelectedEvent.EndDate;
                 IsEditing = true;
+                OnPropertyChanged(nameof(CanEditParticipants));
             }
         }, _ => SelectedEvent != null);
 
-        OpenParticipantsCommand = new RelayCommand(_ => {
+        // УМНАЯ КОМАНДА УЧАСТНИКОВ
+        OpenParticipantsCommand = new RelayCommand(async _ =>
+        {
+            // Если мероприятие новое — сначала сохраняем его
+            if (SelectedEvent == null)
+            {
+                var saved = await SaveAsync(closeModal: false);
+                if (!saved) return; // Ошибка валидации — не открываем
+            }
             if (SelectedEvent != null)
             {
                 var vm = new EventParticipantsViewModel(SelectedEvent, _participantRepo, _studentRepo, _teacherRepo, _groupRepo, _dictRepo);
@@ -104,10 +126,13 @@ public class EventsViewModel : ViewModelBase
                 view.Owner = Application.Current.MainWindow;
                 view.ShowDialog();
             }
-        }, _ => SelectedEvent != null);
+        });
 
-        SaveCommand = new RelayCommand(async _ => await SaveAsync());
-        CancelCommand = new RelayCommand(_ => IsEditing = false);
+        SaveCommand = new RelayCommand(async _ => await SaveAsync(closeModal: true));
+        CancelCommand = new RelayCommand(_ => {
+            IsEditing = false;
+            OnPropertyChanged(nameof(CanEditParticipants));
+        });
         DeleteCommand = new RelayCommand(async _ => await DeleteAsync(), _ => SelectedEvent != null);
 
         _ = InitializeAsync();
@@ -132,19 +157,28 @@ public class EventsViewModel : ViewModelBase
     {
         try
         {
-            var list = await _eventRepo.GetAllAsync();
-            Events.Clear();
-            foreach (var e in list) Events.Add(e);
+            _allEvents = await _eventRepo.GetAllAsync();
+            ApplyFilter();
         }
         catch (Exception ex) { MessageBox.Show($"Ошибка загрузки: {ex.Message}"); }
     }
 
-    private async Task SaveAsync()
+    private void ApplyFilter()
+    {
+        Events.Clear();
+        var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ? _allEvents
+            : _allEvents.Where(e => e.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        foreach (var e in filtered) Events.Add(e);
+    }
+
+    // Возвращает true, если сохранение прошло успешно
+    private async Task<bool> SaveAsync(bool closeModal)
     {
         if (string.IsNullOrWhiteSpace(EditTitle) || EditLevel == null || EditType == null)
         {
             MessageBox.Show("Заполните название, выберите уровень и вид!", "Внимание");
-            return;
+            return false;
         }
 
         try
@@ -160,6 +194,10 @@ public class EventsViewModel : ViewModelBase
                     EndDate = EditEndDate
                 };
                 await _eventRepo.AddAsync(newEv);
+                await LoadAsync();
+                // После LoadAsync найдем свежесозданное мероприятие по названию и дате
+                SelectedEvent = Events.FirstOrDefault(e =>
+                    e.Title == newEv.Title && e.StartDate == newEv.StartDate);
             }
             else
             {
@@ -169,18 +207,28 @@ public class EventsViewModel : ViewModelBase
                 SelectedEvent.StartDate = EditStartDate;
                 SelectedEvent.EndDate = EditEndDate;
                 await _eventRepo.UpdateAsync(SelectedEvent);
+                await LoadAsync();
             }
 
-            IsEditing = false;
-            await LoadAsync();
+            if (closeModal)
+            {
+                IsEditing = false;
+                OnPropertyChanged(nameof(CanEditParticipants));
+            }
+            return true;
         }
-        catch (Exception ex) { MessageBox.Show($"Ошибка сохранения: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка сохранения: {ex.Message}");
+            return false;
+        }
     }
 
     private async Task DeleteAsync()
     {
         if (SelectedEvent == null) return;
-        if (MessageBox.Show($"Удалить мероприятие '{SelectedEvent.Title}'?", "Подтверждение", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+        if (MessageBox.Show($"Удалить мероприятие '{SelectedEvent.Title}'?", "Подтверждение",
+                MessageBoxButton.YesNo) == MessageBoxResult.Yes)
         {
             try
             {
