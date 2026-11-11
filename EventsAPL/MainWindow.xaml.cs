@@ -1,5 +1,6 @@
 ﻿using EventsAPL.ViewModels;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace EventsAPL;
@@ -49,6 +50,16 @@ public partial class MainWindow : Window
                     e.Handled = true;
                 }
             }
+        }
+    }
+
+    private void ImportButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && btn.ContextMenu != null)
+        {
+            btn.ContextMenu.PlacementTarget = btn;
+            btn.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            btn.ContextMenu.IsOpen = true;
         }
     }
 }

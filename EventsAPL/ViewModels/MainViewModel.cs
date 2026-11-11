@@ -1,10 +1,11 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
-using System.Windows;
-using EventsAPL.Base;
+﻿using EventsAPL.Base;
 using EventsAPL.Data;
 using EventsAPL.Models;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Windows;
 
 namespace EventsAPL.ViewModels;
 
@@ -51,6 +52,7 @@ public class MainViewModel : ViewModelBase
     public RelayCommand LoginCommand { get; } = null!;
     public RelayCommand GoBackCommand { get; } = null!;
     public RelayCommand GoForwardCommand { get; } = null!;
+    public RelayCommand ImportStudentsFromWordCommand { get; } = null!;
 
     public MainViewModel()
     {
@@ -75,6 +77,42 @@ public class MainViewModel : ViewModelBase
 
             GoBackCommand = new RelayCommand(_ => GoBack(), _ => _backStack.Count > 0);
             GoForwardCommand = new RelayCommand(_ => GoForward(), _ => _forwardStack.Count > 0);
+
+            // ▼▼▼ Импорт из Word — ВНУТРИ try, где client доступен ▼▼▼
+            ImportStudentsFromWordCommand = new RelayCommand(async _ =>
+            {
+                var dlg = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "Word Documents (*.docx)|*.docx",
+                    Multiselect = true,
+                    Title = "Выберите файлы со списками групп"
+                };
+
+                if (dlg.ShowDialog() != true) return;
+
+                try
+                {
+                    var importer = new StudentListImporter(client, _groupRepository, _studentRepository);
+                    var fullReport = new StringBuilder();
+                    fullReport.AppendLine("=== РЕЗУЛЬТАТЫ ИМПОРТА ===\n");
+
+                    foreach (var file in dlg.FileNames)
+                    {
+                        var result = await importer.ImportFromDocxAsync(file);
+                        fullReport.AppendLine(result);
+                    }
+
+                    MessageBox.Show(fullReport.ToString(), "Импорт студентов", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    if (CurrentViewModel is StudentsViewModel) Navigate("Students");
+                    else if (CurrentViewModel is GroupsViewModel) Navigate("Groups");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            });
+            // ▲▲▲ Конец импорта ▲▲▲
 
             Navigate("Events");
         }

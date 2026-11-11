@@ -4,8 +4,7 @@
         xmlns:vm="clr-namespace:EventsAPL.ViewModels"
         xmlns:views="clr-namespace:EventsAPL.Views"
         Title="Учёт мероприятий"
-        Height="800" Width="1300"
-        MinHeight="600" MinWidth="1000"
+        Height="800" Width="1400"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
         Background="{StaticResource AppBackground}">
@@ -14,105 +13,141 @@
         <vm:MainViewModel/>
     </Window.DataContext>
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="56"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="260"/>
+            <!-- Сайдбар фиксированной ширины -->
+            <ColumnDefinition Width="*"/>
+            <!-- Контент -->
+        </Grid.ColumnDefinitions>
 
-        <!-- =============== ВЕРХНЯЯ ПАНЕЛЬ =============== -->
-        <Border Grid.Row="0" Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,0,1">
-            <Grid Margin="16,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+        <!-- =============== SIDEBAR =============== -->
+        <Border Grid.Column="0" Background="{StaticResource SidebarBg}" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-                <Button Grid.Column="0" Command="{Binding GoBackCommand}" Style="{StaticResource IconButton}" ToolTip="Назад (Mouse 4)" Margin="0,0,4,0">
-                    <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
-                </Button>
+                <!-- Логотип -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="24,24,24,32">
+                    <TextBlock Text="Events" FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentOnDark}"/>
+                    <TextBlock Text="APL" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
+                </StackPanel>
 
-                <Button Grid.Column="1" Command="{Binding GoForwardCommand}" Style="{StaticResource IconButton}" ToolTip="Вперед (Mouse 5)" Margin="0,0,12,0">
-                    <TextBlock Text="&#xE72A;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
-                </Button>
+                <!-- Меню -->
+                <StackPanel Grid.Row="1" Margin="16,0">
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Мероприятия" Tag="&#xE787;" Command="{Binding NavigateCommand}" CommandParameter="Events" IsChecked="True"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Группы" Tag="&#xE716;" Command="{Binding NavigateCommand}" CommandParameter="Groups"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Студенты" Tag="&#xE77B;" Command="{Binding NavigateCommand}" CommandParameter="Students"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Преподаватели" Tag="&#xE7BE;" Command="{Binding NavigateCommand}" CommandParameter="Teachers"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Справочники" Tag="&#xE8F1;" Command="{Binding NavigateCommand}" CommandParameter="Dictionaries"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Журнал" Tag="&#xE81C;" Command="{Binding NavigateCommand}" CommandParameter="Log"/>
+                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Администрирование" Tag="&#xE713;" Command="{Binding NavigateCommand}" CommandParameter="Admin"/>
+                </StackPanel>
 
-                <TextBlock Grid.Column="2" Text="Учёт мероприятий" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
-
-                <TextBlock Grid.Column="4" Text="{Binding UserDisplayName}" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}" Margin="0,0,12,0"/>
-
-                <Button Grid.Column="5" Style="{StaticResource PrimaryButton}" Content="Войти" Command="{Binding LoginCommand}" VerticalAlignment="Center" Padding="20,6"/>
+                <!-- Профиль (заглушка) -->
+                <Border Grid.Row="2" Margin="16,0,16,16" Padding="12" Background="{StaticResource AppSurface}" CornerRadius="8" BorderBrush="{StaticResource AppBorder}" BorderThickness="1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Width="32" Height="32" Background="{StaticResource Accent}" CornerRadius="16">
+                            <TextBlock Text="Г" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                            <TextBlock Text="Гость" FontWeight="SemiBold" FontSize="13"/>
+                            <TextBlock Text="Не авторизован" FontSize="11" Foreground="{StaticResource TextSecondary}"/>
+                        </StackPanel>
+                        <!-- Кнопка выхода (или входа) -->
+                        <Button Grid.Column="2" Content="&#xE7E8;" FontFamily="Segoe MDL2 Assets" Style="{StaticResource IconButton}" Command="{Binding LoginCommand}" ToolTip="Войти"/>
+                    </Grid>
+                </Border>
             </Grid>
         </Border>
 
-        <!-- =============== ОСНОВНАЯ ОБЛАСТЬ =============== -->
-        <Grid Grid.Row="1">
-            <ContentControl Margin="88,16,16,16" Content="{Binding CurrentViewModel}">
-                <ContentControl.Resources>
-                    <DataTemplate DataType="{x:Type vm:GroupsViewModel}">
-                        <views:GroupsView/>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vm:StudentsViewModel}">
-                        <views:StudentsView/>
-                    </DataTemplate>
-              
-                    <DataTemplate DataType="{x:Type vm:TeachersViewModel}">
-                        <views:TeachersView/>
-                    </DataTemplate>
+        <!-- =============== MAIN CONTENT =============== -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="64"/>
+                <!-- Верхняя панель -->
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-                    <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
-                        <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="10">
+            <!-- Верхняя панель -->
+            <Border Grid.Row="0" Background="{StaticResource AppBackground}" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,0,1">
+                <Grid Margin="24,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Навигация (назад/вперед) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Command="{Binding GoBackCommand}" Style="{StaticResource IconButton}" ToolTip="Назад">
+                            <TextBlock Text="&#xE72B;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                        </Button>
+                        <Button Command="{Binding GoForwardCommand}" Style="{StaticResource IconButton}" ToolTip="Вперед" Margin="4,0,0,0">
+                            <TextBlock Text="&#xE72A;" FontFamily="Segoe MDL2 Assets" FontSize="14"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Кнопки быстрых действий (Импорт/Экспорт) -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="ImportButton"
+        Content="Импорт ▼"
+        Style="{StaticResource SecondaryButton}"
+        Margin="0,0,12,0"
+        VerticalAlignment="Center"
+        ContextMenuService.IsEnabled="False"
+        Click="ImportButton_Click">
+                            <Button.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Студенты и группы (Word, списки)" 
+                      Command="{Binding ImportStudentsFromWordCommand}"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
+                        <Button Content="Экспорт" Command="{Binding ExportWordCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"/>
+                        <Button Content="+ Создать" Command="{Binding NavigateCommand}" CommandParameter="Events" Style="{StaticResource PrimaryButton}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Область контента (с отступами) -->
+            <Border Grid.Row="1" Padding="32,24">
+                <ContentControl Content="{Binding CurrentViewModel}">
+                    <ContentControl.Resources>
+                        <!-- Здесь твои DataTemplate для всех ViewModel -->
+                        <DataTemplate DataType="{x:Type vm:EventsViewModel}">
+                            <views:EventsView/>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:GroupsViewModel}">
+                            <views:GroupsView/>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:StudentsViewModel}">
+                            <views:StudentsView/>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:TeachersViewModel}">
+                            <views:TeachersView/>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:DictionariesViewModel}">
+                            <views:DictionariesView/>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PlaceholderViewModel}">
                             <TextBlock Text="{Binding Text}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" Foreground="{StaticResource TextSecondary}"/>
-                        </Border>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vm:DictionariesViewModel}">
-                        <views:DictionariesView/>
-                    </DataTemplate>
-                    <DataTemplate DataType="{x:Type vm:EventsViewModel}">
-                        <views:EventsView/>
-                    </DataTemplate>
-                </ContentControl.Resources>
-            </ContentControl>
-
-            <Border HorizontalAlignment="Left" Background="{StaticResource SidebarBg}" BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,1,0" MouseEnter="Sidebar_MouseEnter" MouseLeave="Sidebar_MouseLeave" Panel.ZIndex="1">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Width" Value="72"/>
-                        <Setter Property="MinWidth" Value="72"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsSidebarExpanded}" Value="True">
-                                <DataTrigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="240" Duration="0:0:0.2" FillBehavior="HoldEnd"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </DataTrigger.EnterActions>
-                                <DataTrigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Width" To="72" Duration="0:0:0.2" FillBehavior="HoldEnd"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </DataTrigger.ExitActions>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <StackPanel Margin="0,12,0,0">
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Мероприятия" Tag="&#xE787;" Command="{Binding NavigateCommand}" CommandParameter="Events" IsChecked="True" ToolTip="Мероприятия"/>
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Группы" Tag="&#xE716;" Command="{Binding NavigateCommand}" CommandParameter="Groups" ToolTip="Группы"/>
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Студенты" Tag="&#xE77B;" Command="{Binding NavigateCommand}" CommandParameter="Students" ToolTip="Студенты"/>
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Преподаватели" Tag="&#xE7BE;" Command="{Binding NavigateCommand}" CommandParameter="Teachers" ToolTip="Преподаватели"/>
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Справочники" Tag="&#xE8F1;" Command="{Binding NavigateCommand}" CommandParameter="Dictionaries" ToolTip="Справочники"/>
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Журнал" Tag="&#xE81C;" Command="{Binding NavigateCommand}" CommandParameter="Log" ToolTip="Журнал действий"/>
-                    <RadioButton Style="{StaticResource NavItem}" GroupName="Nav" Content="Администрирование" Tag="&#xE713;" Command="{Binding NavigateCommand}" CommandParameter="Admin" ToolTip="Администрирование"/>
-                </StackPanel>
+                        </DataTemplate>
+                    </ContentControl.Resources>
+                </ContentControl>
             </Border>
         </Grid>
     </Grid>
-</Window>
+</Window>             

@@ -1,24 +1,31 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- ====== ФОНЫ ====== -->
-    <SolidColorBrush x:Key="AppBackground"   Color="#0A1F17"/>
-    <SolidColorBrush x:Key="AppSurface"      Color="#102A20"/>
-    <SolidColorBrush x:Key="AppBorder"       Color="#1F4235"/>
-    <SolidColorBrush x:Key="SidebarBg"       Color="#0D2419"/>
+    <!-- Основные фоны -->
+    <SolidColorBrush x:Key="AppBackground" Color="#0F141A"/>
+    <SolidColorBrush x:Key="AppSurface" Color="#171E26"/>
+    <SolidColorBrush x:Key="SidebarBg" Color="#0A0F14"/>
+    <SolidColorBrush x:Key="InputBg" Color="#121920"/>
 
-    <!-- ====== ТЕКСТ ====== -->
-    <SolidColorBrush x:Key="TextPrimary"     Color="#E5F5EB"/>
-    <SolidColorBrush x:Key="TextSecondary"   Color="#7FA08D"/>
-    <SolidColorBrush x:Key="TextOnAccent"    Color="#051510"/>
+    <!-- Границы -->
+    <SolidColorBrush x:Key="AppBorder" Color="#232C38"/>
 
-    <!-- ====== АКЦЕНТ (изумруд) ====== -->
-    <SolidColorBrush x:Key="Accent"          Color="#10B981"/>
-    <SolidColorBrush x:Key="AccentHover"     Color="#34D399"/>
-    <SolidColorBrush x:Key="AccentDim"       Color="#0E3A2B"/>
+    <!-- Текст -->
+    <SolidColorBrush x:Key="TextPrimary" Color="#E6EDF3"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#8B97A6"/>
+    <SolidColorBrush x:Key="TextMuted" Color="#5A6472"/>
 
-    <!-- ====== СОСТОЯНИЯ ====== -->
-    <SolidColorBrush x:Key="Hover"           Color="#17382A"/>
-    <SolidColorBrush x:Key="Danger"          Color="#F87171"/>
+    <!-- Акцент (Кобальт) -->
+    <SolidColorBrush x:Key="Accent" Color="#2E6BE6"/>
+    <SolidColorBrush x:Key="AccentHover" Color="#3B78F0"/>
+    <SolidColorBrush x:Key="AccentPressed" Color="#2456BC"/>
+    <SolidColorBrush x:Key="AccentDim" Color="#1E2D4A"/>
+    <SolidColorBrush x:Key="AccentOnDark" Color="#5B8DFF"/>
+
+    <!-- Состояния -->
+    <SolidColorBrush x:Key="Success" Color="#3FB950"/>
+    <SolidColorBrush x:Key="Warning" Color="#D29922"/>
+    <SolidColorBrush x:Key="Danger" Color="#F85149"/>
+    <SolidColorBrush x:Key="Hover" Color="#1A2330"/>
 
 </ResourceDictionary>

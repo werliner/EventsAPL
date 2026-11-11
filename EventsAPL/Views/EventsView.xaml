@@ -16,20 +16,20 @@
             <!-- ШАПКА -->
             <Grid Grid.Row="0" Margin="0,0,0,24">
                 <StackPanel>
-                    <TextBlock Text="Мероприятия" FontSize="32" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
-                    <TextBlock Text="Управление списком мероприятий" FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,6,0,0"/>
+                    <TextBlock Text="Мероприятия" FontSize="28" FontWeight="Bold" Foreground="{StaticResource TextPrimary}"/>
+                    <TextBlock Text="Управление списком мероприятий" FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                    <Button Content="Обновить" Command="{Binding LoadCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Участники" Command="{Binding OpenParticipantsCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
+                    <Button Content="Обновить" Command="{Binding LoadCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Редактировать" Command="{Binding OpenEditCommand}" Style="{StaticResource SecondaryButton}" Margin="0,0,12,0"/>
                     <Button Content="Удалить" Command="{Binding DeleteCommand}" Style="{StaticResource DangerButton}" Margin="0,0,12,0"/>
                     <Button Content="+ Добавить" Command="{Binding OpenAddCommand}" Style="{StaticResource PrimaryButton}"/>
                 </StackPanel>
             </Grid>
 
-            <!-- СПИСОК -->
+            <!-- СПИСОК КАРТОЧЕК -->
             <ListView Grid.Row="1" 
                       ItemsSource="{Binding Events}" 
                       SelectedItem="{Binding SelectedEvent}"
@@ -41,35 +41,36 @@
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="ListViewItem">
-                                    <Border x:Name="Bd" Background="{StaticResource SidebarBg}" CornerRadius="8" Padding="20,16" Margin="0,0,0,8" BorderThickness="1" BorderBrush="{StaticResource AppBorder}">
+                                    <Border x:Name="Bd" Background="{StaticResource AppSurface}" CornerRadius="8" Padding="20,16" Margin="0,0,0,12" BorderThickness="1" BorderBrush="{StaticResource AppBorder}">
                                         <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
 
-                                            <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                                    <Border Background="{StaticResource AccentDim}" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                        <TextBlock Text="{Binding EventLevelTitle}" FontSize="12" Foreground="{StaticResource AccentOnDark}"/>
+                                                    </Border>
+                                                    <Border Background="{StaticResource Hover}" CornerRadius="4" Padding="6,2" Margin="0,0,16,0">
+                                                        <TextBlock Text="{Binding EventTypeTitle}" FontSize="12" Foreground="{StaticResource TextSecondary}"/>
+                                                    </Border>
 
-                                            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
-                                                <Border Background="{StaticResource AccentDim}" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
-                                                    <TextBlock Text="{Binding EventLevelTitle}" FontSize="12" Foreground="{StaticResource Accent}"/>
-                                                </Border>
-                                                <Border Background="{StaticResource Hover}" CornerRadius="4" Padding="6,2" Margin="0,0,16,0">
-                                                    <TextBlock Text="{Binding EventTypeTitle}" FontSize="12" Foreground="{StaticResource TextSecondary}"/>
-                                                </Border>
-
-                                                <TextBlock Text="{Binding StartDate, StringFormat='dd.MM.yyyy'}" FontSize="13" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
-                                                <TextBlock Text=" — " FontSize="13" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
-                                                <TextBlock Text="{Binding EndDate, StringFormat='dd.MM.yyyy', TargetNullValue=''}" FontSize="13" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding StartDate, StringFormat='dd.MM.yyyy'}" FontSize="13" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text=" — " FontSize="13" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding EndDate, StringFormat='dd.MM.yyyy', TargetNullValue=''}" FontSize="13" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center"/>
+                                                </StackPanel>
                                             </StackPanel>
                                         </Grid>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Hover}"/>
+                                            <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource TextMuted}"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentDim}"/>
+                                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource Hover}"/>
                                             <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource Accent}"/>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
@@ -82,13 +83,13 @@
         </Grid>
 
         <!-- МОДАЛЬНОЕ ОКНО -->
-        <Grid Background="#CC05120E" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
+        <Grid Background="#CC0A0F14" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="12" Width="600" Padding="32" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
-                    <TextBlock Text="Данные мероприятия" FontSize="24" FontWeight="Bold" Margin="0,0,0,24" Foreground="{StaticResource TextPrimary}"/>
+                    <TextBlock Text="Данные мероприятия" FontSize="20" FontWeight="Bold" Margin="0,0,0,24" Foreground="{StaticResource TextPrimary}"/>
 
                     <TextBlock Text="Название" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
-                    <TextBox Text="{Binding EditTitle, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBox}" MinHeight="42" Margin="0,0,0,16"/>
+                    <TextBox Text="{Binding EditTitle, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource AppTextBox}" MinHeight="40" Margin="0,0,0,16"/>
 
                     <Grid Margin="0,0,0,16">
                         <Grid.ColumnDefinitions>
@@ -98,12 +99,12 @@
 
                         <StackPanel Grid.Column="0" Margin="0,0,8,0">
                             <TextBlock Text="Уровень" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
-                            <ComboBox ItemsSource="{Binding Levels}" SelectedItem="{Binding EditLevel}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Height="42"/>
+                            <ComboBox ItemsSource="{Binding Levels}" SelectedItem="{Binding EditLevel}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Height="40"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Margin="8,0,0,0">
                             <TextBlock Text="Вид" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
-                            <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding EditType}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Height="42"/>
+                            <ComboBox ItemsSource="{Binding Types}" SelectedItem="{Binding EditType}" DisplayMemberPath="Title" Style="{StaticResource AppComboBox}" Height="40"/>
                         </StackPanel>
                     </Grid>
 
@@ -115,22 +116,18 @@
 
                         <StackPanel Grid.Column="0" Margin="0,0,8,0">
                             <TextBlock Text="Дата начала" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
-                            <DatePicker SelectedDate="{Binding EditStartDate}" 
-                                        Style="{StaticResource AppDatePicker}" 
-                                        Height="42" VerticalContentAlignment="Center"/>
+                            <DatePicker SelectedDate="{Binding EditStartDate}" Style="{StaticResource AppDatePicker}" Height="40" VerticalContentAlignment="Center"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Margin="8,0,0,0">
                             <TextBlock Text="Дата окончания (необязательно)" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,8"/>
-                            <DatePicker SelectedDate="{Binding EditEndDate}" 
-                                        Style="{StaticResource AppDatePicker}" 
-                                        Height="42" VerticalContentAlignment="Center"/>
+                            <DatePicker SelectedDate="{Binding EditEndDate}" Style="{StaticResource AppDatePicker}" Height="40" VerticalContentAlignment="Center"/>
                         </StackPanel>
                     </Grid>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                        <Button Content="Отмена" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Height="42" Margin="0,0,12,0" Width="100"/>
-                        <Button Content="Сохранить" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Height="42" Width="120"/>
+                        <Button Content="Отмена" Command="{Binding CancelCommand}" Style="{StaticResource SecondaryButton}" Height="40" Margin="0,0,12,0" Width="100"/>
+                        <Button Content="Сохранить" Command="{Binding SaveCommand}" Style="{StaticResource PrimaryButton}" Height="40" Width="120"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
