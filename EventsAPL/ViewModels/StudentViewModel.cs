@@ -11,6 +11,8 @@ public class StudentsViewModel : ViewModelBase
     private readonly StudentRepository _studentRepo;
     private readonly GroupRepository _groupRepo;
 
+    private List<Student> _allStudents = new();
+
     public ObservableCollection<Group> Groups { get; } = new();
     public ObservableCollection<Student> Students { get; } = new();
 
@@ -18,19 +20,11 @@ public class StudentsViewModel : ViewModelBase
     public Group? SelectedGroupFilter
     {
         get => _selectedGroupFilter;
-        set
-        {
-            if (Set(ref _selectedGroupFilter, value))
-                _ = LoadStudentsAsync();
-        }
+        set { if (Set(ref _selectedGroupFilter, value)) _ = LoadStudentsAsync(); }
     }
 
     private Group? _selectedStudentGroup;
-    public Group? SelectedStudentGroup
-    {
-        get => _selectedStudentGroup;
-        set => Set(ref _selectedStudentGroup, value);
-    }
+    public Group? SelectedStudentGroup { get => _selectedStudentGroup; set => Set(ref _selectedStudentGroup, value); }
 
     private bool _isEditing;
     public bool IsEditing { get => _isEditing; set => Set(ref _isEditing, value); }
@@ -43,11 +37,17 @@ public class StudentsViewModel : ViewModelBase
         {
             if (Set(ref _selectedStudent, value))
             {
-                // Обновляем доступность кнопок при выборе
                 OpenEditCommand?.RaiseCanExecuteChanged();
                 DeleteCommand?.RaiseCanExecuteChanged();
             }
         }
+    }
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set { if (Set(ref _searchText, value)) ApplyFilter(); }
     }
 
     private string _editLastName = "";
@@ -103,8 +103,7 @@ public class StudentsViewModel : ViewModelBase
         try
         {
             var groups = await _groupRepo.GetAllAsync();
-            Groups.Clear();
-            foreach (var g in groups) Groups.Add(g);
+            Groups.Clear(); foreach (var g in groups) Groups.Add(g);
 
             SelectedGroupFilter = initialGroupId.HasValue
                 ? Groups.FirstOrDefault(g => g.Id == initialGroupId.Value)
@@ -115,14 +114,22 @@ public class StudentsViewModel : ViewModelBase
 
     private async Task LoadStudentsAsync()
     {
-        int groupId = SelectedGroupFilter?.Id ?? 0;
+        if (SelectedGroupFilter == null) return;
         try
         {
-            var list = await _studentRepo.GetByGroupAsync(groupId);
-            Students.Clear();
-            foreach (var s in list) Students.Add(s);
+            _allStudents = await _studentRepo.GetByGroupAsync(SelectedGroupFilter.Id);
+            ApplyFilter();
         }
         catch (Exception ex) { MessageBox.Show($"Ошибка загрузки: {ex.Message}"); }
+    }
+
+    private void ApplyFilter()
+    {
+        Students.Clear();
+        var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ? _allStudents
+            : _allStudents.Where(s => s.FullName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        foreach (var s in filtered) Students.Add(s);
     }
 
     private async Task SaveAsync()

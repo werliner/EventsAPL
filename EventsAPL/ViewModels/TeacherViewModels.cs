@@ -10,6 +10,8 @@ public class TeachersViewModel : ViewModelBase
 {
     private readonly TeacherRepository _repository;
 
+    private List<Teacher> _allTeachers = new();
+
     public ObservableCollection<Teacher> Teachers { get; } = new();
 
     private bool _isEditing;
@@ -27,6 +29,13 @@ public class TeachersViewModel : ViewModelBase
                 DeleteCommand?.RaiseCanExecuteChanged();
             }
         }
+    }
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set { if (Set(ref _searchText, value)) ApplyFilter(); }
     }
 
     private string _editLastName = string.Empty;
@@ -78,11 +87,19 @@ public class TeachersViewModel : ViewModelBase
     {
         try
         {
-            var list = await _repository.GetAllAsync();
-            Teachers.Clear();
-            foreach (var t in list) Teachers.Add(t);
+            _allTeachers = await _repository.GetAllAsync();
+            ApplyFilter();
         }
         catch (Exception ex) { MessageBox.Show($"Ошибка загрузки: {ex.Message}"); }
+    }
+
+    private void ApplyFilter()
+    {
+        Teachers.Clear();
+        var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ? _allTeachers
+            : _allTeachers.Where(t => t.FullName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        foreach (var t in filtered) Teachers.Add(t);
     }
 
     private async Task SaveAsync()

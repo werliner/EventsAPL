@@ -48,7 +48,8 @@
                     <ItemsControl ItemsSource="{Binding AvailableStudents}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8" Padding="12">
+                                <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8" Padding="12" 
+        MouseLeftButtonDown="ParticipantCard_MouseLeftButtonDown" Cursor="Hand">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
@@ -78,7 +79,8 @@
                     <ItemsControl ItemsSource="{Binding AvailableTeachers}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8" Padding="12">
+                                <Border Background="{StaticResource AppSurface}" BorderBrush="{StaticResource AppBorder}" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8" Padding="12" 
+        MouseLeftButtonDown="ParticipantCard_MouseLeftButtonDown" Cursor="Hand">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>

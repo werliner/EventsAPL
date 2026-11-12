@@ -32,11 +32,12 @@
             <!-- ФИЛЬТР -->
             <StackPanel Grid.Row="1" Margin="0,0,0,16" Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock Text="Фильтр по группе:" VerticalAlignment="Center" Margin="0,0,12,0" FontSize="14" Foreground="{StaticResource TextSecondary}"/>
-                <ComboBox ItemsSource="{Binding Groups}" 
-                          SelectedItem="{Binding SelectedGroupFilter}" 
-                          DisplayMemberPath="Number"
-                          Style="{StaticResource AppComboBox}"
-                          Width="200" />
+                <ComboBox ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroupFilter}" DisplayMemberPath="Number" Style="{StaticResource AppComboBox}" Width="150" Margin="0,0,12,0"/>
+
+                <!-- ПОИСК -->
+                <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" 
+             Style="{StaticResource AppTextBox}" Width="250" VerticalAlignment="Center"
+             ToolTip="Поиск по ФИО"/>
             </StackPanel>
 
             <!-- СПИСОК -->

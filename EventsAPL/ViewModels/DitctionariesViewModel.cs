@@ -9,9 +9,9 @@ namespace EventsAPL.ViewModels;
 public class DictionariesViewModel : ViewModelBase
 {
     private readonly DictionaryRepository _repository;
-
-    // Массив с названиями таблиц в базе. Индекс совпадает с индексом вкладки.
     private readonly string[] _tableNames = { "EventLevels", "EventTypes", "ResultTypes", "ResultLevels" };
+
+    private List<DictionaryItem> _allItems = new();
 
     public ObservableCollection<DictionaryItem> Items { get; } = new();
 
@@ -22,8 +22,18 @@ public class DictionariesViewModel : ViewModelBase
         set
         {
             if (Set(ref _selectedTabIndex, value))
-                _ = LoadAsync(); // При смене вкладки загружаем новую таблицу
+            {
+                SearchText = string.Empty; // Сбрасываем поиск при смене вкладки
+                _ = LoadAsync();
+            }
         }
+    }
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set { if (Set(ref _searchText, value)) ApplyFilter(); }
     }
 
     private bool _isEditing;
@@ -80,18 +90,25 @@ public class DictionariesViewModel : ViewModelBase
         _ = LoadAsync();
     }
 
-    // Получаем имя текущей таблицы на основе выбранной вкладки
     private string CurrentTable => _tableNames[SelectedTabIndex];
 
     private async Task LoadAsync()
     {
         try
         {
-            var list = await _repository.GetAllAsync(CurrentTable);
-            Items.Clear();
-            foreach (var i in list) Items.Add(i);
+            _allItems = await _repository.GetAllAsync(CurrentTable);
+            ApplyFilter();
         }
         catch (Exception ex) { MessageBox.Show($"Ошибка загрузки: {ex.Message}"); }
+    }
+
+    private void ApplyFilter()
+    {
+        Items.Clear();
+        var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ? _allItems
+            : _allItems.Where(i => i.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        foreach (var i in filtered) Items.Add(i);
     }
 
     private async Task SaveAsync()

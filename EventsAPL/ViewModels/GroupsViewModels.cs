@@ -11,13 +11,34 @@ public class GroupsViewModel : ViewModelBase
     private readonly GroupRepository _repository;
     private readonly Action<Group> _navigateToStudents;
 
+    private List<Group> _allGroups = new();
+
     public ObservableCollection<Group> Groups { get; } = new();
 
     private bool _isEditing;
     public bool IsEditing { get => _isEditing; set => Set(ref _isEditing, value); }
 
     private Group? _selectedGroup;
-    public Group? SelectedGroup { get => _selectedGroup; set => Set(ref _selectedGroup, value); }
+    public Group? SelectedGroup
+    {
+        get => _selectedGroup;
+        set
+        {
+            if (Set(ref _selectedGroup, value))
+            {
+                ViewStudentsCommand?.RaiseCanExecuteChanged();
+                OpenEditCommand?.RaiseCanExecuteChanged();
+                DeleteCommand?.RaiseCanExecuteChanged();
+            }
+        }
+    }
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set { if (Set(ref _searchText, value)) ApplyFilter(); }
+    }
 
     private string _editNumber = string.Empty;
     public string EditNumber { get => _editNumber; set => Set(ref _editNumber, value); }
@@ -33,7 +54,6 @@ public class GroupsViewModel : ViewModelBase
     public RelayCommand DeleteCommand { get; }
     public RelayCommand ViewStudentsCommand { get; }
 
-    // ВОТ ЗДЕСЬ ДОЛЖНО БЫТЬ ДВА АРГУМЕНТА!
     public GroupsViewModel(GroupRepository repository, Action<Group> navigateToStudents)
     {
         _repository = repository;
@@ -41,16 +61,14 @@ public class GroupsViewModel : ViewModelBase
 
         LoadCommand = new RelayCommand(async _ => await LoadAsync());
 
-        OpenAddCommand = new RelayCommand(_ =>
-        {
+        OpenAddCommand = new RelayCommand(_ => {
             SelectedGroup = null;
             EditNumber = string.Empty;
             EditTitle = string.Empty;
             IsEditing = true;
         });
 
-        OpenEditCommand = new RelayCommand(_ =>
-        {
+        OpenEditCommand = new RelayCommand(_ => {
             if (SelectedGroup != null)
             {
                 EditNumber = SelectedGroup.Number;
@@ -61,11 +79,9 @@ public class GroupsViewModel : ViewModelBase
 
         SaveCommand = new RelayCommand(async _ => await SaveAsync());
         CancelCommand = new RelayCommand(_ => IsEditing = false);
-
         DeleteCommand = new RelayCommand(async _ => await DeleteAsync(), _ => SelectedGroup != null);
 
-        ViewStudentsCommand = new RelayCommand(_ =>
-        {
+        ViewStudentsCommand = new RelayCommand(_ => {
             if (SelectedGroup != null) _navigateToStudents(SelectedGroup);
         }, _ => SelectedGroup != null);
 
@@ -76,11 +92,20 @@ public class GroupsViewModel : ViewModelBase
     {
         try
         {
-            var list = await _repository.GetAllAsync();
-            Groups.Clear();
-            foreach (var g in list) Groups.Add(g);
+            _allGroups = await _repository.GetAllAsync();
+            ApplyFilter();
         }
         catch (Exception ex) { MessageBox.Show($"Ошибка загрузки: {ex.Message}"); }
+    }
+
+    private void ApplyFilter()
+    {
+        Groups.Clear();
+        var filtered = string.IsNullOrWhiteSpace(SearchText)
+            ? _allGroups
+            : _allGroups.Where(g => g.Number.Contains(SearchText, StringComparison.OrdinalIgnoreCase)
+                                 || g.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+        foreach (var g in filtered) Groups.Add(g);
     }
 
     private async Task SaveAsync()
@@ -104,7 +129,6 @@ public class GroupsViewModel : ViewModelBase
                 SelectedGroup.Title = EditTitle;
                 await _repository.UpdateAsync(SelectedGroup);
             }
-
             IsEditing = false;
             await LoadAsync();
         }
@@ -114,10 +138,7 @@ public class GroupsViewModel : ViewModelBase
     private async Task DeleteAsync()
     {
         if (SelectedGroup == null) return;
-
-        var result = MessageBox.Show($"Удалить группу '{SelectedGroup.Number}'?", "Подтверждение",
-            MessageBoxButton.YesNo, MessageBoxImage.Warning);
-
+        var result = MessageBox.Show($"Удалить группу '{SelectedGroup.Number}'?", "Подтверждение", MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (result == MessageBoxResult.Yes)
         {
             try

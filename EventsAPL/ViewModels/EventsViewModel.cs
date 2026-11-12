@@ -226,16 +226,29 @@ public class EventsViewModel : ViewModelBase
 
     private async Task DeleteAsync()
     {
-        if (SelectedEvent == null) return;
-        if (MessageBox.Show($"Удалить мероприятие '{SelectedEvent.Title}'?", "Подтверждение",
-                MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+        // 1. Берем мероприятие в локальную переменную. 
+        // Если оно null — сразу выходим.
+        var eventToDelete = SelectedEvent;
+        if (eventToDelete == null) return;
+
+        if (MessageBox.Show($"Удалить мероприятие '{eventToDelete.Title}'?", "Подтверждение",
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
         {
             try
             {
-                await _eventRepo.DeleteAsync(SelectedEvent.Id);
+                // 2. Удаляем по ID, который мы сохранили
+                await _eventRepo.DeleteAsync(eventToDelete.Id);
+
+                // 3. Сбрасываем выделение ДО загрузки нового списка
+                SelectedEvent = null;
+
+                // 4. Загружаем обновленный список
                 await LoadAsync();
             }
-            catch (Exception ex) { MessageBox.Show($"Ошибка удаления: {ex.Message}"); }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка удаления: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
