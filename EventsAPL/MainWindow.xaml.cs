@@ -62,4 +62,9 @@ public partial class MainWindow : Window
             btn.ContextMenu.IsOpen = true;
         }
     }
+
+    private void Button_Click(object sender, RoutedEventArgs e)
+    {
+
+    }
 }

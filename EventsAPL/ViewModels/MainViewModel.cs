@@ -21,6 +21,8 @@ public class MainViewModel : ViewModelBase
     private readonly Stack<ViewModelBase> _backStack = new();
     private readonly Stack<ViewModelBase> _forwardStack = new();
 
+    public RelayCommand ExportStudentsCommand { get; } = null!;
+
     private bool _isSidebarHovered;
     public bool IsSidebarHovered
     {
@@ -115,6 +117,43 @@ public class MainViewModel : ViewModelBase
             // ▲▲▲ Конец импорта ▲▲▲
 
             Navigate("Events");
+
+
+            ExportStudentsCommand = new RelayCommand(async _ =>
+            {
+                var dlg = new Microsoft.Win32.SaveFileDialog
+                {
+                    Filter = "Word Document (*.docx)|*.docx",
+                    FileName = $"Отчет_Студенты_{DateTime.Now:yyyyMMdd}.docx"
+                };
+
+                if (dlg.ShowDialog() == true)
+                {
+                    try
+                    {
+                        var exportService = new WordExportService(client);
+                        string result = await exportService.ExportStudentsToWordAsync(dlg.FileName, null, null);
+
+                        MessageBox.Show(result, "Экспорт", MessageBoxButton.OK, MessageBoxImage.Information);
+                        if (MessageBox.Show("Открыть файл?", "Вопрос", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dlg.FileName) { UseShellExecute = true });
+                    }
+                    catch (Exception ex)
+                    {
+                        // Показываем полную цепочку ошибок
+                        var inner = ex.InnerException;
+                        string details = ex.Message;
+                        while (inner != null)
+                        {
+                            details += $"\n→ {inner.Message}";
+                            inner = inner.InnerException;
+                        }
+                        MessageBox.Show($"Ошибка: {details}\n\n{ex.StackTrace}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            });
+
+
         }
         catch (Exception ex)
         {
