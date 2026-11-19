@@ -2,7 +2,6 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace EventsAPL.Data;
 
@@ -11,45 +10,59 @@ public class TursoClient
     private readonly HttpClient _httpClient;
     private readonly string _url;
 
-    // В конструкторе TursoClient
     public TursoClient(string url, string token)
     {
         _url = url;
+
+        // Настраиваем пул соединений: они будут жить дольше, чтобы не тратить время на рукопожатия
         var handler = new SocketsHttpHandler
         {
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5), // Принудительно обновлять соединения
-            ConnectTimeout = TimeSpan.FromSeconds(30) // Таймаут на подключение
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            ConnectTimeout = TimeSpan.FromSeconds(30)
         };
+
         _httpClient = new HttpClient(handler);
-        _httpClient.Timeout = TimeSpan.FromSeconds(60); // Общий таймаут
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        // Увеличиваем общий таймаут до 2 минут (Turso иногда тупит из-за расстояния)
+        _httpClient.Timeout = TimeSpan.FromSeconds(120);
+        _httpClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
     }
-    /// <summary>
-    /// Отправляет SQL-запрос в Turso и возвращает ответ в формате JSON.
-    /// </summary>
+
     public async Task<string> ExecuteAsync(string sql)
     {
-        // Turso API v2 ожидает запрос в формате JSON с массивом "requests"
         var requestBody = new
         {
             requests = new[]
             {
-                new
-                {
-                    type = "execute",
-                    stmt = new { sql = sql }
-                }
+                new { type = "execute", stmt = new { sql = sql } }
             }
         };
 
         var jsonContent = JsonSerializer.Serialize(requestBody);
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-        // Отправляем POST на /v2/pipeline (стандартный эндпоинт Turso для HTTP)
-        var response = await _httpClient.PostAsync($"{_url}/v2/pipeline", content);
+        int retries = 3;
+        Exception? lastException = null;
 
-        response.EnsureSuccessStatusCode();
+        for (int i = 0; i < retries; i++)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsync($"{_url}/v2/pipeline", content);
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException)
+            {
+                lastException = ex;
+                // Если это была не последняя попытка, ждем 2 секунды и пробуем снова
+                if (i < retries - 1)
+                {
+                    await Task.Delay(2000);
+                }
+            }
+        }
 
-        return await response.Content.ReadAsStringAsync();
+        throw new Exception($"Сетевая ошибка после {retries} попыток: {lastException?.Message}", lastException);
     }
 }
