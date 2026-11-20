@@ -15,19 +15,27 @@ public class WordExportService
         _client = client;
     }
 
+    /// <summary>
+    /// Экспорт отчёта по студентам.
+    /// Создаёт два файла:
+    ///   1. Основной отчёт (filePath)
+    ///   2. Приложение с расшифровкой больших групп (рядом, с префиксом "Приложение_к_отчету_")
+    /// Возвращает путь к основному файлу.
+    /// </summary>
     public async Task<string> ExportStudentsToWordAsync(string filePath, DateTime? fromDate, DateTime? toDate)
     {
         var data = await LoadDataAsync(fromDate, toDate);
         if (!data.Any()) return "Нет данных для экспорта за указанный период.";
 
+        // ========== 1. ОСНОВНОЙ ОТЧЁТ ==========
         using var doc = new XWPFDocument();
 
-        // 1. Альбомная ориентация
+        // Альбомная ориентация
         CT_SectPr sectPr = new CT_SectPr();
         sectPr.pgSz = new CT_PageSz { orient = ST_PageOrientation.landscape, w = 16838, h = 11906 };
         doc.Document.body.sectPr = sectPr;
 
-        // 2. Заголовок
+        // Заголовок
         var titlePara = doc.CreateParagraph();
         titlePara.Alignment = ParagraphAlignment.CENTER;
         var titleRun = titlePara.CreateRun();
@@ -37,16 +45,19 @@ public class WordExportService
         titleRun.FontFamily = "Times New Roman";
         doc.CreateParagraph();
 
-        // 3. Группировка по Уровням
+        // Группировка по уровням
         var levels = data.GroupBy(x => x.LevelTitle).OrderBy(g => g.Key);
-        var footnotes = new List<(string EventTitle, string GroupNumber, string ResultText, string StudentName)>();
 
-        // Для общей статистики в конце
+        // Сюда собираем данные для приложения:
+        // Key = название мероприятия, Value = список (группа, результат, список ФИО)
+        var appendixData = new List<(string EventTitle, string GroupNumber, string ResultText, List<string> StudentNames)>();
+
+        // Для общей статистики
         var globalStats = new Dictionary<string, (int events, int results, int partDup, int partUniq)>();
 
         foreach (var levelGroup in levels)
         {
-            // Заголовок уровня (по центру, жирный)
+            // Заголовок уровня
             var lvlPara = doc.CreateParagraph();
             lvlPara.Alignment = ParagraphAlignment.CENTER;
             var lvlRun = lvlPara.CreateRun();
@@ -82,31 +93,45 @@ public class WordExportService
 
                 int startRowIndex = table.NumberOfRows;
 
-                // Группируем по Группе и Результату для сносок
+                // Группируем по Группе и Результату
                 var studentsByGroupAndResult = students.GroupBy(s => new { s.GroupNumber, s.ResultText });
                 var studentNames = new List<string>();
                 var results = new List<string>();
 
                 foreach (var sGroup in studentsByGroupAndResult)
                 {
-                    if (sGroup.Count() > 5)
+                    if (sGroup.Count() > 10)
                     {
-                        studentNames.Add($"{sGroup.Key.GroupNumber} - {sGroup.Count()} чел.[^]");
+                        // ===== БОЛЬШЕ 10 ЧЕЛОВЕК → ссылка на приложение =====
+                        studentNames.Add($"{sGroup.Key.GroupNumber} - {sGroup.Count()} чел. [Приложение]");
                         results.Add(sGroup.Key.ResultText);
-                        foreach (var s in sGroup)
-                            footnotes.Add((first.EventTitle, sGroup.Key.GroupNumber, sGroup.Key.ResultText, s.StudentName));
+
+                        // Собираем данные для приложения
+                        appendixData.Add((
+                            first.EventTitle,
+                            sGroup.Key.GroupNumber,
+                            sGroup.Key.ResultText,
+                            sGroup.Select(s => s.StudentName).ToList()
+                        ));
                     }
                     else
                     {
+                        // <= 10 человек → пишем прямо в таблицу
                         foreach (var s in sGroup)
                         {
                             studentNames.Add($"{s.StudentName} ({s.GroupNumber})");
                             results.Add(s.ResultText);
                         }
                     }
+
+                    // Статистика
+                    levelPartDup += sGroup.Count();
+                    foreach (var s in sGroup)
+                        if (s.StudentId.HasValue) uniqueStudentsInLevel.Add(s.StudentId.Value);
+                    levelResults += sGroup.Count();
                 }
 
-                // Создаем строки для каждого студента
+                // Создаём строки таблицы
                 for (int i = 0; i < studentNames.Count; i++)
                 {
                     var row = table.CreateRow();
@@ -117,12 +142,12 @@ public class WordExportService
                         SetCellText(row.GetCell(1), first.EventTitle, false);
                         SetCellText(row.GetCell(2), FormatDate(first.StartDate, first.EndDate), false);
 
-                        string leader = string.Join("\n", evGroup.Select(x => x.LeaderName).Where(x => !string.IsNullOrEmpty(x)).Distinct());
+                        string leader = string.Join("\n",
+                            evGroup.Select(x => x.LeaderName).Where(x => !string.IsNullOrEmpty(x)).Distinct());
                         SetCellText(row.GetCell(3), leader, false);
                     }
                     else
                     {
-                        // Пустые ячейки, которые потом объединим
                         SetCellText(row.GetCell(0), "", false);
                         SetCellText(row.GetCell(1), "", false);
                         SetCellText(row.GetCell(2), "", false);
@@ -133,80 +158,45 @@ public class WordExportService
                     SetCellText(row.GetCell(5), results[i], false);
                 }
 
-                // Объединяем ячейки (Vertical Merge) если студентов больше 1
+                // Вертикальное объединение ячеек
                 if (studentNames.Count > 1)
                 {
                     for (int col = 0; col <= 3; col++)
                     {
-                        // Первая ячейка (начало объединения)
                         var firstCell = table.GetRow(startRowIndex).GetCell(col);
                         var tcPr1 = firstCell.GetCTTc().tcPr ?? firstCell.GetCTTc().AddNewTcPr();
                         var vMerge1 = tcPr1.vMerge ?? tcPr1.AddNewVMerge();
-                        // ИСПОЛЬЗУЕМ restart с маленькой буквы
-                        vMerge1.val = NPOI.OpenXmlFormats.Wordprocessing.ST_Merge.restart;
+                        vMerge1.val = ST_Merge.restart;
 
-                        // Остальные ячейки (продолжение)
                         for (int r = 1; r < studentNames.Count; r++)
                         {
                             var nextCell = table.GetRow(startRowIndex + r).GetCell(col);
                             var tcPr2 = nextCell.GetCTTc().tcPr ?? nextCell.GetCTTc().AddNewTcPr();
                             var vMerge2 = tcPr2.vMerge ?? tcPr2.AddNewVMerge();
-                            // ИСПОЛЬЗУЕМ @continue (с собакой, т.к. это зарезервированное слово)
-                            vMerge2.val = NPOI.OpenXmlFormats.Wordprocessing.ST_Merge.@continue;
+                            vMerge2.val = ST_Merge.@continue;
                         }
                     }
                 }
+
+                counter++;
             }
 
-                // Статистика по уровню (отдельным блоком внизу)
-                int levelPartUniq = uniqueStudentsInLevel.Count;
+            // Статистика по уровню
+            int levelPartUniq = uniqueStudentsInLevel.Count;
             globalStats[levelGroup.Key] = (eventsInLevel.Count, levelResults, levelPartDup, levelPartUniq);
 
             AddSummaryRow(doc, "Всего мероприятий:", eventsInLevel.Count.ToString());
             AddSummaryRow(doc, "Всего результатов участия (победители, призеры, участники):", levelResults.ToString());
-            AddSummaryRow(doc, "Всего участников (с повторением в разных мероприятиях уровня/без повторений на уровне):", $"{levelPartDup}/{levelPartUniq}");
+            AddSummaryRow(doc, "Всего участников (с повторением в разных мероприятиях уровня/без повторений на уровне):",
+                $"{levelPartDup}/{levelPartUniq}");
 
             doc.CreateParagraph();
         }
 
-        // 4. Сноски (Приложения)
-        if (footnotes.Any())
-        {
-            var fnPara = doc.CreateParagraph();
-            var fnRun = fnPara.CreateRun();
-            fnRun.SetText("[^] Расшифровка групп:");
-            fnRun.IsBold = true;
-            fnRun.FontSize = 12;
-            fnRun.FontFamily = "Times New Roman";
-
-            foreach (var group in footnotes.GroupBy(f => f.EventTitle))
-            {
-                var evPara = doc.CreateParagraph();
-                var evRun = evPara.CreateRun();
-                evRun.SetText($"{group.Key}:");
-                evRun.IsBold = true;
-                evRun.FontFamily = "Times New Roman";
-
-                foreach (var groupGroup in group.GroupBy(g => new { g.GroupNumber, g.ResultText }))
-                {
-                    var grpPara = doc.CreateParagraph();
-                    var grpRun = grpPara.CreateRun();
-                    grpRun.SetText($"  Группа {groupGroup.Key.GroupNumber} ({groupGroup.Key.ResultText}):");
-                    grpRun.IsBold = true;
-                    grpRun.FontFamily = "Times New Roman";
-
-                    var names = string.Join(", ", groupGroup.Select(x => x.StudentName));
-                    var namesPara = doc.CreateParagraph();
-                    var nRun = namesPara.CreateRun();
-                    nRun.SetText($"    {names}");
-                    nRun.FontFamily = "Times New Roman";
-                }
-            }
-        }
-
-        // 5. ОБЩАЯ СВОДНАЯ СТАТИСТИКА (в самом конце)
+        // ОБЩАЯ СВОДНАЯ СТАТИСТИКА
         var pageBreakPara = doc.CreateParagraph();
         pageBreakPara.CreateRun().AddBreak(BreakType.PAGE);
+
         var overallTitle = doc.CreateParagraph();
         overallTitle.Alignment = ParagraphAlignment.CENTER;
         var overallRun = overallTitle.CreateRun();
@@ -215,7 +205,6 @@ public class WordExportService
         overallRun.FontSize = 14;
         overallRun.FontFamily = "Times New Roman";
 
-        // Создаем таблицу для сводки (2 колонки: Название уровня, Статистика)
         int totalLevels = globalStats.Count;
         var statsTable = doc.CreateTable(totalLevels + 2, 2);
         SetTableWidths(statsTable, new int[] { 8000, 4000 });
@@ -225,18 +214,146 @@ public class WordExportService
         {
             var row = statsTable.GetRow(rIdx++);
             SetCellText(row.GetCell(0), $"Всего по уровню: {kvp.Key}", true);
-            SetCellText(row.GetCell(1), $"{kvp.Value.events} меропр. / {kvp.Value.results} рез. / {kvp.Value.partDup} уч. (уник. {kvp.Value.partUniq})", false);
+            SetCellText(row.GetCell(1),
+                $"{kvp.Value.events} меропр. / {kvp.Value.results} рез. / {kvp.Value.partDup} уч. (уник. {kvp.Value.partUniq})",
+                false);
         }
 
-        // Итоговая строка
         var totalRow = statsTable.GetRow(rIdx);
         SetCellText(totalRow.GetCell(0), "ИТОГО ЗА ВЕСЬ ПЕРИОД", true);
         SetCellText(totalRow.GetCell(1), "", false);
 
-        using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write);
-        doc.Write(fs);
-        return "Отчет по студентам успешно сформирован по эталону!";
+        // Сохраняем основной отчёт
+        using (var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write))
+        {
+            doc.Write(fs);
+        }
+
+        // ========== 2. ПРИЛОЖЕНИЕ (если есть данные) ==========
+        if (appendixData.Any())
+        {
+            string appendixPath = BuildAppendixPath(filePath);
+            GenerateAppendixDocument(appendixPath, appendixData, fromDate, toDate);
+        }
+
+        return "Отчёт по студентам успешно сформирован!" +
+               (appendixData.Any() ? "\nПриложение сохранено рядом с основным файлом." : "");
     }
+
+    // ==================== ГЕНЕРАЦИЯ ПРИЛОЖЕНИЯ ====================
+
+    private void GenerateAppendixDocument(
+    string appendixPath,
+    List<(string EventTitle, string GroupNumber, string ResultText, List<string> StudentNames)> appendixData,
+    DateTime? fromDate, DateTime? toDate)
+    {
+        using var doc = new XWPFDocument();
+
+        // Портретная ориентация
+        CT_SectPr sectPr = new CT_SectPr();
+        sectPr.pgSz = new CT_PageSz { orient = ST_PageOrientation.portrait, w = 11906, h = 16838 };
+        doc.Document.body.sectPr = sectPr;
+
+        // Заголовок
+        var titlePara = doc.CreateParagraph();
+        titlePara.Alignment = ParagraphAlignment.CENTER;
+        var titleRun = titlePara.CreateRun();
+        titleRun.SetText("ПРИЛОЖЕНИЕ\nк отчёту об участии студентов\nв мероприятиях различного уровня\nза " + GetPeriodText(fromDate, toDate));
+        titleRun.IsBold = true;
+        titleRun.FontSize = 14;
+        titleRun.FontFamily = "Times New Roman";
+        doc.CreateParagraph(); // пустая строка после заголовка
+
+        // Создаём таблицу: заголовок + строки данных
+        int totalRows = 1 + appendixData.Count; // 1 = шапка
+        var table = doc.CreateTable(totalRows, 4);
+        SetTableWidths(table, new int[] { 600, 4500, 2000, 4806 });
+
+        // Шапка таблицы
+        var headerRow = table.GetRow(0);
+        SetCellText(headerRow.GetCell(0), "№", true);
+        SetCellText(headerRow.GetCell(1), "Наименование мероприятия", true);
+        SetCellText(headerRow.GetCell(2), "Группа\n(результат)", true);
+        SetCellText(headerRow.GetCell(3), "Ф.И.О. студентов", true);
+
+        // Строки данных
+        int counter = 1;
+        foreach (var entry in appendixData)
+        {
+            var row = table.GetRow(counter);
+
+            SetCellText(row.GetCell(0), counter.ToString(), false);
+            SetCellText(row.GetCell(1), entry.EventTitle, false);
+            SetCellText(row.GetCell(2), $"{entry.GroupNumber}\n({entry.ResultText})", false);
+
+            // ФИО через запятую, перенос по словам
+            string names = string.Join(", ", entry.StudentNames);
+            SetCellText(row.GetCell(3), names, false);
+
+            counter++;
+        }
+
+        // Применяем границы ко всем ячейкам таблицы
+        ApplyTableBorders(table);
+
+        using var fs = new FileStream(appendixPath, FileMode.Create, FileAccess.Write);
+        doc.Write(fs);
+    }
+
+    /// <summary>
+    /// Применяет тонкие чёрные границы ко всем ячейкам таблицы.
+    /// </summary>
+    private void ApplyTableBorders(XWPFTable table)
+    {
+        var tbl = table.GetCTTbl();
+        var tblPr = tbl.tblPr ?? tbl.AddNewTblPr();
+
+        var borders = tblPr.tblBorders ?? tblPr.AddNewTblBorders();
+
+        // top, bottom, left, right, insideH, insideV
+        var top = borders.top ?? borders.AddNewTop();
+        top.val = ST_Border.single;
+        top.sz = 4;
+        top.color = "000000";
+
+        var bottom = borders.bottom ?? borders.AddNewBottom();
+        bottom.val = ST_Border.single;
+        bottom.sz = 4;
+        bottom.color = "000000";
+
+        var left = borders.left ?? borders.AddNewLeft();
+        left.val = ST_Border.single;
+        left.sz = 4;
+        left.color = "000000";
+
+        var right = borders.right ?? borders.AddNewRight();
+        right.val = ST_Border.single;
+        right.sz = 4;
+        right.color = "000000";
+
+        var insideH = borders.insideH ?? borders.AddNewInsideH();
+        insideH.val = ST_Border.single;
+        insideH.sz = 4;
+        insideH.color = "000000";
+
+        var insideV = borders.insideV ?? borders.AddNewInsideV();
+        insideV.val = ST_Border.single;
+        insideV.sz = 4;
+        insideV.color = "000000";
+    }
+
+    /// <summary>
+    /// Строит путь к файлу приложения рядом с основным файлом.
+    /// Например: C:\Reports\Отчет.docx → C:\Reports\Приложение_к_отчету_Студенты_20261120.docx
+    /// </summary>
+    private string BuildAppendixPath(string mainFilePath)
+    {
+        string dir = Path.GetDirectoryName(mainFilePath) ?? "";
+        string dateStr = DateTime.Now.ToString("yyyyMMdd");
+        return Path.Combine(dir, $"Приложение_к_отчету_Студенты_{dateStr}.docx");
+    }
+
+    // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
 
     private void AddSummaryRow(XWPFDocument doc, string label, string value)
     {
@@ -251,14 +368,11 @@ public class WordExportService
 
     private void SetCellText(XWPFTableCell cell, string text, bool isBold)
     {
-        // Очищаем ячейку от дефолтного параграфа
         while (cell.Paragraphs.Count > 0) cell.RemoveParagraph(0);
 
-        // Создаем один параграф для ячейки
         var p = cell.AddParagraph();
         p.Alignment = ParagraphAlignment.LEFT;
 
-        // Разбиваем текст на строки по \n
         string[] lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
 
         for (int i = 0; i < lines.Length; i++)
@@ -269,17 +383,15 @@ public class WordExportService
             r.FontFamily = "Times New Roman";
             r.FontSize = 10;
 
-            // Если это не последняя строка, добавляем настоящий перенос строки Word
             if (i < lines.Length - 1)
-            {
                 r.AddBreak(BreakType.TEXTWRAPPING);
-            }
         }
     }
 
     private void SetTableWidths(XWPFTable table, int[] widths)
     {
-        for (int i = 0; i < widths.Length; i++) table.SetColumnWidth(i, (ulong)widths[i]);
+        for (int i = 0; i < widths.Length; i++)
+            table.SetColumnWidth(i, (ulong)widths[i]);
     }
 
     private string FormatDate(DateTime start, DateTime? end)
@@ -299,7 +411,6 @@ public class WordExportService
 
     private async Task<List<ExportRow>> LoadDataAsync(DateTime? from, DateTime? to)
     {
-        // Тут код запроса к БД (остается без изменений)
         string dateFilter = "";
         if (from.HasValue) dateFilter += $" AND e.StartDate >= '{from.Value:yyyy-MM-dd}'";
         if (to.HasValue) dateFilter += $" AND e.StartDate <= '{to.Value:yyyy-MM-dd}'";
@@ -345,14 +456,17 @@ public class WordExportService
         foreach (var row in rows.EnumerateArray())
         {
             var r = new ExportRow();
-            string SafeStr(JsonElement el) => el.ValueKind == JsonValueKind.Object && el.TryGetProperty("value", out var v) && v.ValueKind != JsonValueKind.Null ? v.GetString() ?? "" : "";
+            string SafeStr(JsonElement el) =>
+                el.ValueKind == JsonValueKind.Object && el.TryGetProperty("value", out var v) &&
+                v.ValueKind != JsonValueKind.Null ? v.GetString() ?? "" : "";
             int SafeInt(JsonElement el) => int.TryParse(SafeStr(el), out int i) ? i : 0;
             DateTime SafeDate(JsonElement el) => DateTime.TryParse(SafeStr(el), out DateTime d) ? d : DateTime.MinValue;
 
             r.EventId = SafeInt(row[0]);
             r.EventTitle = SafeStr(row[1]);
             r.StartDate = SafeDate(row[2]);
-            if (row[3].ValueKind == JsonValueKind.Object && row[3].TryGetProperty("value", out var ed) && ed.ValueKind != JsonValueKind.Null)
+            if (row[3].ValueKind == JsonValueKind.Object && row[3].TryGetProperty("value", out var ed) &&
+                ed.ValueKind != JsonValueKind.Null)
                 r.EndDate = DateTime.TryParse(ed.GetString(), out DateTime d) ? d : null;
 
             r.LevelTitle = SafeStr(row[4]);

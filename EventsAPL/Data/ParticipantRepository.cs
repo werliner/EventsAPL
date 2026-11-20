@@ -7,6 +7,32 @@ public class ParticipantRepository
 {
     private readonly TursoClient _client;
 
+
+
+
+
+
+    public async Task AddBatchAsync(int eventId, IEnumerable<EventParticipant> participants)
+    {
+        if (!participants.Any()) return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append("INSERT INTO EventParticipants (EventId, StudentId, TeacherId, ResultTypeId, ResultLevelId) VALUES ");
+
+        var values = participants.Select(p => {
+            string studentIdStr = p.StudentId.HasValue ? p.StudentId.Value.ToString() : "NULL";
+            string teacherIdStr = p.TeacherId.HasValue ? p.TeacherId.Value.ToString() : "NULL";
+            string typeIdStr = p.ResultTypeId.HasValue ? p.ResultTypeId.Value.ToString() : "NULL";
+            string levelIdStr = p.ResultLevelId.HasValue ? p.ResultLevelId.Value.ToString() : "NULL";
+            return $"({eventId}, {studentIdStr}, {teacherIdStr}, {typeIdStr}, {levelIdStr})";
+        });
+
+        sb.Append(string.Join(", ", values));
+        await _client.ExecuteAsync(sb.ToString());
+    }
+
+
+
     public ParticipantRepository(TursoClient client)
     {
         _client = client;

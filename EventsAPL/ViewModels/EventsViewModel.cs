@@ -16,11 +16,21 @@ public class EventsViewModel : ViewModelBase
     private readonly TeacherRepository _teacherRepo;
     private readonly GroupRepository _groupRepo;
 
-    private List<Event> _allEvents = new();
+    // ИСПРАВЛЕНИЕ 2: Токен отмены для предотвращения race condition
+    private CancellationTokenSource? _loadCts;
 
+    private List<Event> _allEvents = new();
     public ObservableCollection<Event> Events { get; } = new();
     public ObservableCollection<DictionaryItem> Levels { get; } = new();
     public ObservableCollection<DictionaryItem> Types { get; } = new();
+
+    // ИСПРАВЛЕНИЕ 3: Индикатор загрузки
+    private bool _isLoading;
+    public bool IsLoading
+    {
+        get => _isLoading;
+        set => Set(ref _isLoading, value);
+    }
 
     private bool _isEditing;
     public bool IsEditing { get => _isEditing; set => Set(ref _isEditing, value); }
@@ -110,15 +120,14 @@ public class EventsViewModel : ViewModelBase
             }
         }, _ => SelectedEvent != null);
 
-        // УМНАЯ КОМАНДА УЧАСТНИКОВ
         OpenParticipantsCommand = new RelayCommand(async _ =>
         {
-            // Если мероприятие новое — сначала сохраняем его
             if (SelectedEvent == null)
             {
                 var saved = await SaveAsync(closeModal: false);
-                if (!saved) return; // Ошибка валидации — не открываем
+                if (!saved) return;
             }
+
             if (SelectedEvent != null)
             {
                 var vm = new EventParticipantsViewModel(SelectedEvent, _participantRepo, _studentRepo, _teacherRepo, _groupRepo, _dictRepo);
@@ -129,10 +138,12 @@ public class EventsViewModel : ViewModelBase
         });
 
         SaveCommand = new RelayCommand(async _ => await SaveAsync(closeModal: true));
+
         CancelCommand = new RelayCommand(_ => {
             IsEditing = false;
             OnPropertyChanged(nameof(CanEditParticipants));
         });
+
         DeleteCommand = new RelayCommand(async _ => await DeleteAsync(), _ => SelectedEvent != null);
 
         _ = InitializeAsync();
@@ -143,36 +154,74 @@ public class EventsViewModel : ViewModelBase
         try
         {
             var levels = await _dictRepo.GetAllAsync("EventLevels");
-            Levels.Clear(); foreach (var l in levels) Levels.Add(l);
+            Levels.Clear();
+            foreach (var l in levels) Levels.Add(l);
 
             var types = await _dictRepo.GetAllAsync("EventTypes");
-            Types.Clear(); foreach (var t in types) Types.Add(t);
+            Types.Clear();
+            foreach (var t in types) Types.Add(t);
 
             await LoadAsync();
         }
-        catch (Exception ex) { MessageBox.Show($"Ошибка инициализации: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка инициализации: {ex.Message}");
+        }
     }
 
+    // ИСПРАВЛЕНИЕ 4: Метод загрузки с отменой предыдущих запросов
     private async Task LoadAsync()
     {
+        // Отменяем предыдущий запрос, если он ещё идёт
+        _loadCts?.Cancel();
+        _loadCts = new CancellationTokenSource();
+        var token = _loadCts.Token;
+
         try
         {
+            IsLoading = true;
+
+            token.ThrowIfCancellationRequested();
+
             _allEvents = await _eventRepo.GetAllAsync();
-            ApplyFilter();
+
+            token.ThrowIfCancellationRequested();
+
+            // Парсинг в background thread, чтобы не блокировать UI
+            await Task.Run(() => ApplyFilter(), token);
         }
-        catch (Exception ex) { MessageBox.Show($"Ошибка загрузки: {ex.Message}"); }
+        catch (OperationCanceledException)
+        {
+            // Запрос был отменён - это нормально
+            System.Diagnostics.Debug.WriteLine("[Events] Загрузка отменена");
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            // Снимаем флаг загрузки только если это не отменённый запрос
+            if (!token.IsCancellationRequested)
+                IsLoading = false;
+        }
     }
 
     private void ApplyFilter()
     {
-        Events.Clear();
         var filtered = string.IsNullOrWhiteSpace(SearchText)
             ? _allEvents
-            : _allEvents.Where(e => e.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
-        foreach (var e in filtered) Events.Add(e);
+            : _allEvents.Where(e => e.Title.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        // Обновляем UI в один присест через Dispatcher
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            Events.Clear();
+            foreach (var e in filtered)
+                Events.Add(e);
+        });
     }
 
-    // Возвращает true, если сохранение прошло успешно
     private async Task<bool> SaveAsync(bool closeModal)
     {
         if (string.IsNullOrWhiteSpace(EditTitle) || EditLevel == null || EditType == null)
@@ -193,9 +242,10 @@ public class EventsViewModel : ViewModelBase
                     StartDate = EditStartDate,
                     EndDate = EditEndDate
                 };
+
                 await _eventRepo.AddAsync(newEv);
                 await LoadAsync();
-                // После LoadAsync найдем свежесозданное мероприятие по названию и дате
+
                 SelectedEvent = Events.FirstOrDefault(e =>
                     e.Title == newEv.Title && e.StartDate == newEv.StartDate);
             }
@@ -206,6 +256,7 @@ public class EventsViewModel : ViewModelBase
                 SelectedEvent.EventTypeId = EditType.Id;
                 SelectedEvent.StartDate = EditStartDate;
                 SelectedEvent.EndDate = EditEndDate;
+
                 await _eventRepo.UpdateAsync(SelectedEvent);
                 await LoadAsync();
             }
@@ -215,6 +266,7 @@ public class EventsViewModel : ViewModelBase
                 IsEditing = false;
                 OnPropertyChanged(nameof(CanEditParticipants));
             }
+
             return true;
         }
         catch (Exception ex)
@@ -226,8 +278,6 @@ public class EventsViewModel : ViewModelBase
 
     private async Task DeleteAsync()
     {
-        // 1. Берем мероприятие в локальную переменную. 
-        // Если оно null — сразу выходим.
         var eventToDelete = SelectedEvent;
         if (eventToDelete == null) return;
 
@@ -236,13 +286,8 @@ public class EventsViewModel : ViewModelBase
         {
             try
             {
-                // 2. Удаляем по ID, который мы сохранили
                 await _eventRepo.DeleteAsync(eventToDelete.Id);
-
-                // 3. Сбрасываем выделение ДО загрузки нового списка
                 SelectedEvent = null;
-
-                // 4. Загружаем обновленный список
                 await LoadAsync();
             }
             catch (Exception ex)

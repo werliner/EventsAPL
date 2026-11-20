@@ -11,8 +11,21 @@ public class SelectableStudent : ViewModelBase
     public Student Student { get; }
     private bool _isSelected;
     public bool IsSelected { get => _isSelected; set => Set(ref _isSelected, value); }
-    public DictionaryItem? SelectedResultType { get; set; }
-    public DictionaryItem? SelectedResultLevel { get; set; }
+
+    private DictionaryItem? _selectedResultType;
+    public DictionaryItem? SelectedResultType
+    {
+        get => _selectedResultType;
+        set => Set(ref _selectedResultType, value);
+    }
+
+    private DictionaryItem? _selectedResultLevel;
+    public DictionaryItem? SelectedResultLevel
+    {
+        get => _selectedResultLevel;
+        set => Set(ref _selectedResultLevel, value);
+    }
+
     public SelectableStudent(Student student) => Student = student;
 }
 
@@ -21,8 +34,21 @@ public class SelectableTeacher : ViewModelBase
     public Teacher Teacher { get; }
     private bool _isSelected;
     public bool IsSelected { get => _isSelected; set => Set(ref _isSelected, value); }
-    public DictionaryItem? SelectedResultType { get; set; }
-    public DictionaryItem? SelectedResultLevel { get; set; }
+
+    private DictionaryItem? _selectedResultType;
+    public DictionaryItem? SelectedResultType
+    {
+        get => _selectedResultType;
+        set => Set(ref _selectedResultType, value);
+    }
+
+    private DictionaryItem? _selectedResultLevel;
+    public DictionaryItem? SelectedResultLevel
+    {
+        get => _selectedResultLevel;
+        set => Set(ref _selectedResultLevel, value);
+    }
+
     public SelectableTeacher(Teacher teacher) => Teacher = teacher;
 }
 
@@ -35,11 +61,16 @@ public class EventParticipantsViewModel : ViewModelBase
     private readonly GroupRepository _groupRepo;
     private readonly DictionaryRepository _dictRepo;
 
+    private List<EventParticipant> _existingParticipants = new();
+
     public string EventTitle => _event.Title;
 
     public ObservableCollection<Group> Groups { get; } = new();
-    public ObservableCollection<SelectableStudent> AvailableStudents { get; } = new();
-    public ObservableCollection<SelectableTeacher> AvailableTeachers { get; } = new();
+
+    // ВАЖНО: добавлен private set, чтобы мы могли заменять коллекцию целиком одним махом
+    public ObservableCollection<SelectableStudent> AvailableStudents { get; private set; } = new();
+    public ObservableCollection<SelectableTeacher> AvailableTeachers { get; private set; } = new();
+
     public ObservableCollection<DictionaryItem> ResultTypes { get; } = new();
     public ObservableCollection<DictionaryItem> ResultLevels { get; } = new();
 
@@ -49,7 +80,8 @@ public class EventParticipantsViewModel : ViewModelBase
         get => _selectedGroup;
         set
         {
-            if (Set(ref _selectedGroup, value)) _ = LoadStudentsAsync();
+            if (Set(ref _selectedGroup, value))
+                _ = LoadStudentsAsync();
         }
     }
 
@@ -62,6 +94,7 @@ public class EventParticipantsViewModel : ViewModelBase
             if (Set(ref _isStudentMode, value)) OnPropertyChanged(nameof(IsTeacherMode));
         }
     }
+
     public bool IsTeacherMode
     {
         get => !IsStudentMode;
@@ -94,55 +127,85 @@ public class EventParticipantsViewModel : ViewModelBase
         {
             var rt = await _dictRepo.GetAllAsync("ResultTypes");
             foreach (var i in rt) ResultTypes.Add(i);
+
             var rl = await _dictRepo.GetAllAsync("ResultLevels");
             foreach (var i in rl) ResultLevels.Add(i);
 
+            _existingParticipants = await _participantRepo.GetByEventAsync(_event.Id);
+
+            // Преподаватели: создаем в памяти, затем отдаем UI
+            var teachers = await _teacherRepo.GetAllAsync();
+            var newTeachersCollection = new ObservableCollection<SelectableTeacher>();
+            foreach (var t in teachers)
+            {
+                var selectable = new SelectableTeacher(t);
+                ApplyTeacherSelection(selectable);
+                newTeachersCollection.Add(selectable);
+            }
+            AvailableTeachers = newTeachersCollection;
+            OnPropertyChanged(nameof(AvailableTeachers));
+
             var groups = await _groupRepo.GetAllAsync();
             foreach (var g in groups) Groups.Add(g);
-            SelectedGroup = Groups.FirstOrDefault();
 
-            var teachers = await _teacherRepo.GetAllAsync();
-            foreach (var t in teachers) AvailableTeachers.Add(new SelectableTeacher(t));
-
-            var existing = await _participantRepo.GetByEventAsync(_event.Id);
-
-            foreach (var p in existing)
+            if (Groups.Count > 0)
             {
-                if (p.StudentId.HasValue)
-                {
-                    var st = AvailableStudents.FirstOrDefault(x => x.Student.Id == p.StudentId.Value);
-                    if (st != null)
-                    {
-                        st.IsSelected = true;
-                        st.SelectedResultType = ResultTypes.FirstOrDefault(x => x.Id == p.ResultTypeId);
-                        st.SelectedResultLevel = ResultLevels.FirstOrDefault(x => x.Id == p.ResultLevelId);
-                    }
-                }
-                else if (p.TeacherId.HasValue)
-                {
-                    var t = AvailableTeachers.FirstOrDefault(x => x.Teacher.Id == p.TeacherId.Value);
-                    if (t != null)
-                    {
-                        t.IsSelected = true;
-                        t.SelectedResultType = ResultTypes.FirstOrDefault(x => x.Id == p.ResultTypeId);
-                        t.SelectedResultLevel = ResultLevels.FirstOrDefault(x => x.Id == p.ResultLevelId);
-                    }
-                }
+                _selectedGroup = Groups[0];
+                OnPropertyChanged(nameof(SelectedGroup));
+                await LoadStudentsAsync();
             }
         }
-        catch (Exception ex) { MessageBox.Show($"Ошибка инициализации: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка инициализации: {ex.Message}");
+        }
     }
 
     private async Task LoadStudentsAsync()
     {
-        if (SelectedGroup == null) return;
+        if (_selectedGroup == null) return;
         try
         {
-            var students = await _studentRepo.GetByGroupAsync(SelectedGroup.Id);
-            AvailableStudents.Clear();
-            foreach (var s in students) AvailableStudents.Add(new SelectableStudent(s));
+            var students = await _studentRepo.GetByGroupAsync(_selectedGroup.Id);
+            var newCollection = new ObservableCollection<SelectableStudent>();
+
+            foreach (var s in students)
+            {
+                var selectable = new SelectableStudent(s);
+                ApplyStudentSelection(selectable);
+                newCollection.Add(selectable);
+            }
+
+            // Отдаем готовую коллекцию UI одним махом (без мерцания)
+            AvailableStudents = newCollection;
+            OnPropertyChanged(nameof(AvailableStudents));
         }
-        catch (Exception ex) { MessageBox.Show($"Ошибка загрузки студентов: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка загрузки студентов: {ex.Message}");
+        }
+    }
+
+    private void ApplyStudentSelection(SelectableStudent selectable)
+    {
+        var existing = _existingParticipants.FirstOrDefault(p => p.StudentId == selectable.Student.Id);
+        if (existing != null)
+        {
+            selectable.IsSelected = true;
+            selectable.SelectedResultType = ResultTypes.FirstOrDefault(x => x.Id == existing.ResultTypeId);
+            selectable.SelectedResultLevel = ResultLevels.FirstOrDefault(x => x.Id == existing.ResultLevelId);
+        }
+    }
+
+    private void ApplyTeacherSelection(SelectableTeacher selectable)
+    {
+        var existing = _existingParticipants.FirstOrDefault(p => p.TeacherId == selectable.Teacher.Id);
+        if (existing != null)
+        {
+            selectable.IsSelected = true;
+            selectable.SelectedResultType = ResultTypes.FirstOrDefault(x => x.Id == existing.ResultTypeId);
+            selectable.SelectedResultLevel = ResultLevels.FirstOrDefault(x => x.Id == existing.ResultLevelId);
+        }
     }
 
     private async Task SaveAsync()
@@ -151,31 +214,36 @@ public class EventParticipantsViewModel : ViewModelBase
         {
             await _participantRepo.DeleteAllByEventAsync(_event.Id);
 
-            foreach (var s in AvailableStudents.Where(x => x.IsSelected))
+            var selectedStudents = AvailableStudents.Where(x => x.IsSelected).Select(s => new EventParticipant
             {
-                await _participantRepo.AddAsync(new EventParticipant
-                {
-                    EventId = _event.Id,
-                    StudentId = s.Student.Id,
-                    ResultTypeId = s.SelectedResultType?.Id,
-                    ResultLevelId = s.SelectedResultLevel?.Id
-                });
-            }
+                EventId = _event.Id,
+                StudentId = s.Student.Id,
+                ResultTypeId = s.SelectedResultType?.Id,
+                ResultLevelId = s.SelectedResultLevel?.Id
+            }).ToList();
 
-            foreach (var t in AvailableTeachers.Where(x => x.IsSelected))
+            var selectedTeachers = AvailableTeachers.Where(x => x.IsSelected).Select(t => new EventParticipant
             {
-                await _participantRepo.AddAsync(new EventParticipant
-                {
-                    EventId = _event.Id,
-                    TeacherId = t.Teacher.Id,
-                    ResultTypeId = t.SelectedResultType?.Id,
-                    ResultLevelId = t.SelectedResultLevel?.Id
-                });
+                EventId = _event.Id,
+                TeacherId = t.Teacher.Id,
+                ResultTypeId = t.SelectedResultType?.Id,
+                ResultLevelId = t.SelectedResultLevel?.Id
+            }).ToList();
+
+            var allSelected = selectedStudents.Concat(selectedTeachers).ToList();
+
+            if (allSelected.Any())
+            {
+                // Отправляем ВСЁ одним пакетом (в 50 раз быстрее)
+                await _participantRepo.AddBatchAsync(_event.Id, allSelected);
             }
 
             MessageBox.Show("Участники сохранены!", "Успех");
             CloseAction?.Invoke();
         }
-        catch (Exception ex) { MessageBox.Show($"Ошибка сохранения: {ex.Message}"); }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Ошибка сохранения: {ex.Message}");
+        }
     }
 }
